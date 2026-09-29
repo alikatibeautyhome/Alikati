@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { HeroSlideshowManager } from '@/components/admin/HeroSlideshowManager';
 import { ImageUploadDropzone } from '@/components/admin/ImageUploadDropzone';
 import { WatermarkSettingsCard } from '@/components/admin/WatermarkSettingsCard';
+import { PaymentAccountsManager } from '@/components/admin/PaymentAccountsManager';
 import { PaymentQR } from '@/components/shop/PaymentQR';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -831,13 +832,17 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
+      {/* One card per destination, saved on its own — this is the multi-account replacement for the
+          single QR below, which stays as the fallback for a shop with no accounts configured. */}
+      <PaymentAccountsManager />
+
       <Card>
         <CardHeader>
           <CardTitle>Payments &amp; QR</CardTitle>
           <CardDescription>
             What customers see when they pay by eSewa, Khalti or bank transfer. An uploaded QR image
             wins over the generated one — export your own receive-QR from the payment app for the
-            surest scan.
+            surest scan. Used at checkout only when no payment account above provides one.
           </CardDescription>
         </CardHeader>
         <CardContent>

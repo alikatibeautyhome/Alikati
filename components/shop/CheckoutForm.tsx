@@ -32,7 +32,7 @@ import { getStoredReferralCode, validateCoupon } from '@/lib/marketing-api';
 import { uploadPaymentProof } from '@/lib/shop-admin-api';
 import { createCheckoutFallbackLink } from '@/lib/whatsapp';
 import { formatNPR, isValidNepaliPhone, normalizeWhatsAppNumber } from '@/lib/utils';
-import type { OrderResult, PaymentMethod } from '@/types/commerce.types';
+import type { OrderResult, PaymentAccount, PaymentMethod } from '@/types/commerce.types';
 import type { SalonSettings } from '@/types/database.types';
 import type { CouponPreview } from '@/types/marketing.types';
 
@@ -40,6 +40,13 @@ const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** File types the private `payment-proofs` bucket accepts. */
 const PROOF_ACCEPT = 'image/png,image/jpeg,image/webp,image/heic,application/pdf';
+
+/** Customer-facing wording for each payment account type. */
+const PAYMENT_KIND_LABELS: Record<PaymentAccount['kind'], string> = {
+  bank: 'Bank transfer',
+  wallet: 'Mobile wallet',
+  other: 'Other',
+};
 
 /** Exact copy shown for each failure class — kept in one place so support can quote it. */
 const FAILURE_MESSAGES = {
@@ -95,7 +102,18 @@ function paymentOptionsFor(settings: SalonSettings): PaymentMethod[] {
  * Checkout: a single-column form on mobile with a sticky order summary, posting to
  * `POST /api/orders`. The server re-prices every line, so the totals here are display-only.
  */
-export function CheckoutForm({ settings }: { settings: SalonSettings }) {
+export function CheckoutForm({
+  settings,
+  paymentAccounts = [],
+}: {
+  settings: SalonSettings;
+  /**
+   * The owner's configured payment destinations, read on the server. When this is empty the single
+   * QR on `settings` is used instead, so a shop that has not created any accounts still takes
+   * payment exactly as it did before.
+   */
+  paymentAccounts?: PaymentAccount[];
+}) {
   const router = useRouter();
   const { lines, totals, hydrated, clear } = useCart();
   // Optional customer session — checkout works exactly the same without one.
@@ -766,17 +784,58 @@ export function CheckoutForm({ settings }: { settings: SalonSettings }) {
 
           {isDigitalPayment && (
             <div className="space-y-4 rounded-2xl border border-rose-gold/20 bg-cream-100/60 p-4 sm:p-5">
-              {/* The QR is generated/rendered in the browser and never overflows a 360px screen. */}
-              <PaymentQR
-                enabled={settings.payment_qr_enabled}
-                content={settings.payment_qr_content}
-                imageUrl={settings.payment_qr_image_url}
-                note={settings.payment_note}
-                /* Live total, so the QR re-draws whenever quantities, coupon or delivery change. */
-                amount={payableTotal}
-                currencyLabel="रू"
-                className="max-w-full"
-              />
+              {paymentAccounts.length > 0 ? (
+                /* One block per configured account, so a customer can pick the bank or wallet that
+                   suits them instead of being shown a single destination. */
+                <div className="space-y-4">
+                  {paymentAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="space-y-3 rounded-xl border border-charcoal/10 bg-white/70 p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <p className="text-sm font-semibold text-charcoal">{account.label}</p>
+                        <span className="rounded-full bg-charcoal/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-charcoal-soft">
+                          {PAYMENT_KIND_LABELS[account.kind]}
+                        </span>
+                      </div>
+
+                      {account.account_name || account.account_number ? (
+                        <p className="text-xs text-charcoal-soft">
+                          {[account.account_name, account.account_number].filter(Boolean).join(' · ')}
+                        </p>
+                      ) : null}
+
+                      {account.qr_image_url ? (
+                        <PaymentQR
+                          enabled
+                          imageUrl={account.qr_image_url}
+                          note={account.instructions}
+                          /* Live total, so the QR re-draws when quantities, coupon or delivery change. */
+                          amount={payableTotal}
+                          currencyLabel="रू"
+                          className="max-w-full"
+                        />
+                      ) : account.instructions ? (
+                        <p className="whitespace-pre-line text-xs text-charcoal-soft">
+                          {account.instructions}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* No accounts configured yet: the single QR from settings, exactly as before. */
+                <PaymentQR
+                  enabled={settings.payment_qr_enabled}
+                  content={settings.payment_qr_content}
+                  imageUrl={settings.payment_qr_image_url}
+                  note={settings.payment_note}
+                  amount={payableTotal}
+                  currencyLabel="रू"
+                  className="max-w-full"
+                />
+              )}
 
               {showInstructions && (
                 <div className="flex items-start gap-3 rounded-xl bg-blush-50 p-4 text-sm text-charcoal-soft">

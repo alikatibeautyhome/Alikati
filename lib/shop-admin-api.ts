@@ -14,6 +14,7 @@ import type {
   Order,
   OrderQuery,
   OrderStatus,
+  PaymentAccount,
   Product,
   ProductCategory,
   ProductQuery,
@@ -65,6 +66,50 @@ export async function deleteCategory(id: string): Promise<void> {
 
   const { error } = await db().from('product_categories').delete().eq('id', id);
   if (error) throw new Error(`deleteCategory: ${error.message}`);
+}
+
+/* -------------------------------------------------------- payment accounts */
+
+/**
+ * Every payment destination, retired ones included, in the owner's order.
+ *
+ * Staff-only: the read policy on `payment_accounts` shows active rows to everyone but relies on
+ * `is_staff()` for the rest, so a switched-off account stays visible here and can be switched back
+ * on rather than becoming invisible and therefore unreachable.
+ */
+export async function getPaymentAccounts(): Promise<PaymentAccount[]> {
+  if (isDemoMode()) return [];
+
+  return (unwrap(
+    await db()
+      .from('payment_accounts')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .order('label', { ascending: true }),
+    'getPaymentAccounts'
+  ) ?? []) as PaymentAccount[];
+}
+
+export async function upsertPaymentAccount(
+  input: Partial<PaymentAccount> & { label: string }
+): Promise<PaymentAccount> {
+  // Demo mode has no payment rows. Echoing the input keeps the form usable without pretending a
+  // write happened.
+  if (isDemoMode()) {
+    return { id: input.id ?? crypto.randomUUID(), kind: 'bank', ...input } as PaymentAccount;
+  }
+
+  return unwrap(
+    await db().from('payment_accounts').upsert(input, { onConflict: 'id' }).select().single(),
+    'upsertPaymentAccount'
+  ) as PaymentAccount;
+}
+
+export async function deletePaymentAccount(id: string): Promise<void> {
+  if (isDemoMode()) return;
+
+  const { error } = await db().from('payment_accounts').delete().eq('id', id);
+  if (error) throw new Error(`deletePaymentAccount: ${error.message}`);
 }
 
 /* ---------------------------------------------------------------- products */

@@ -10,6 +10,8 @@ import { Field } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableWrap, TBody, TD, TH, THead, TR } from '@/components/ui/table';
+import { SingleImageUpload } from '@/components/admin/SingleImageUpload';
+import { uploadCategoryImage } from '@/lib/api-client';
 import {
   deleteCategory,
   getProductCategories,
@@ -408,15 +410,15 @@ export default function AdminCategoriesPage() {
               />
             </Field>
 
-            <Field label="Image URL" htmlFor="category-image" hint="Optional shelf image.">
-              <Input
-                id="category-image"
-                value={form.image_url}
-                onChange={(event) => patch('image_url', event.target.value)}
-                placeholder="https://…"
-                autoComplete="off"
-              />
-            </Field>
+            {/* Was a bare URL box, so in practice categories went without an image. */}
+            <SingleImageUpload
+              id="category-image"
+              label="Category image"
+              hint="Optional. Shown on the shop's category tiles."
+              value={form.image_url}
+              onChange={(url) => patch('image_url', url)}
+              upload={uploadCategoryImage}
+            />
           </div>
 
           <label className="flex items-center gap-2 text-sm text-charcoal">

@@ -986,3 +986,58 @@ the content is not yet there. (2) The grounding shadow is a CSS overlay, so it a
 and product page but not in link previews or order confirmations, which use the raw image. (3) Swipe
 and hover cannot be exercised in this environment; they are verified by markup and unit-level
 reasoning, not by gesture.
+
+---
+
+## v1.22 — Well 10 page removed, multiple payment accounts, category image upload
+
+**Removed: the `/well10` showcase.** The nav entry, the sitemap entry, the route, the section
+component, its catalogue module and its types are gone — those products already live in the shop
+under the `Well10` category, so the separate brand page was a second copy of the same nine items
+free to drift out of step. `/well10` now returns 404. The products, the category and the images are
+untouched; the category chip still reads "Well10" on each card, which is the catalogue category
+working as configured.
+
+**Multiple payment accounts (migration 0020).** `payment_accounts` holds one row per destination —
+a bank, a wallet, or anything else — each with its own uploaded QR, account name and number, an
+instruction line, an order and an on/off switch. Managed from a new "Payment accounts & QR codes"
+card in admin settings, and rendered at checkout one block per account so a customer can pay into
+whichever suits them. The old single `salon_settings.payment_qr_*` pair stays in place and stays
+populated; checkout falls back to it when no account exists, so a shop that never touches the new
+card keeps working exactly as before.
+
+The migration **carries the existing QR across**: the owner's configured eSewa code becomes the
+first account row, seeded only when there is something to seed and only when the table is empty, so
+re-running it cannot duplicate anything.
+
+**Category image upload.** The category form had an "Image URL" box and nothing else, so in practice
+categories went without an image. It now has the drag-and-drop uploader the rest of the console uses.
+
+**A real bug, caught by testing the checkout as an anonymous visitor.** Migration 0020 granted
+SELECT **column by column**, copying the pattern from `reviews`. That pattern is right for `reviews`
+— it hides internal columns and every query against it names its columns explicitly. It was wrong
+here: the application reads payment accounts with `select('*')`, and `select('*')` needs SELECT on
+the **table**. The checkout's own query was refused with `42501 permission denied`, which would have
+shown a customer nothing at all at the payment step. `has_any_column_privilege` reported `true` the
+whole time, which is what made it quiet — a schema dump looked correct. Migration 0021 replaces the
+column grants with a table-level one, and removes the redundant per-column grants so the schema says
+one thing rather than two.
+
+**Verified**
+- `/well10` → **404**; the nav lists Services, Shop, Academy, Portfolio, Contact; the sitemap no
+  longer contains the path; no source file references the removed modules.
+- Anonymous read of `payment_accounts` (the role that actually renders the checkout) returns the one
+  active account: `eSewa · wallet · 9869512756 · QR present`. **This is the test that found the bug,
+  and it passes now.**
+- The `is_active` policy genuinely gates it: with the account hidden, the anonymous read returns
+  zero rows; restoring it returns one.
+- `tsc --noEmit --incremental false` clean, `--noUnusedLocals` clean, `npm run build` clean,
+  `supabase/apply-all.sql` regenerated at 20 migrations.
+
+**Boundaries, stated plainly.** (1) The checkout's payment block could only be verified at the data
+layer, not on screen: the cart lives in browser storage, so a request without one renders the
+empty-cart panel and never reaches the block. (2) The signed-in admin cards for payment accounts and
+the category uploader are verified by build, TypeScript and the shape of the writes they perform —
+not by clicking, since no browser is available here. (3) The sitemap advertises
+`loose-recovered-checked-brass.trycloudflare.com`, a tunnel URL from an earlier session. That is
+environment-driven and predates this change, but it is worth setting a real domain.

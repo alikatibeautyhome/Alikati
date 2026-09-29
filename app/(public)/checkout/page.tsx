@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getSalonSettings } from '@/lib/api';
+import { getActivePaymentAccounts } from '@/lib/shop-api';
 import { CheckoutForm } from '@/components/shop/CheckoutForm';
 
 export const metadata: Metadata = {
@@ -9,7 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
-  const settings = await getSalonSettings();
+  // Both in parallel: the QR block cannot render until it knows where the shop is paid.
+  const [settings, paymentAccounts] = await Promise.all([
+    getSalonSettings(),
+    getActivePaymentAccounts(),
+  ]);
 
   return (
     <section className="section">
@@ -26,7 +31,7 @@ export default async function CheckoutPage() {
         </header>
 
         <div className="mt-8">
-          <CheckoutForm settings={settings} />
+          <CheckoutForm settings={settings} paymentAccounts={paymentAccounts} />
         </div>
       </div>
     </section>

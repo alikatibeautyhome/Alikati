@@ -14,6 +14,7 @@ import { productPrice } from '@/lib/commerce';
 import type {
   Order,
   OrderItem,
+  PaymentAccount,
   Product,
   ProductCategory,
   ProductQuery,
@@ -129,6 +130,39 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   return getProducts({ featuredOnly: true, sort: 'newest', limit });
+}
+
+/**
+ * The payment destinations the shop currently accepts, in the owner's chosen order.
+ *
+ * Read on the server so the checkout arrives with the QRs already in the markup rather than popping
+ * in after hydration — someone on a slow connection should see where to send money as soon as the
+ * page paints.
+ *
+ * Public by design: checkout has to show a visitor where to pay before they have any account, and
+ * the table holds nothing but the shop's own published account numbers. The read policy returns
+ * active rows only, so this cannot surface a switched-off account either.
+ *
+ * An empty list is a normal state rather than an error — it is what a shop with no accounts
+ * configured looks like, and the checkout then falls back to the single QR on `salon_settings`.
+ */
+export async function getActivePaymentAccounts(): Promise<PaymentAccount[]> {
+  if (isDemoMode()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('payment_accounts')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .order('label', { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as PaymentAccount[];
+  } catch (error) {
+    return degraded('getActivePaymentAccounts', error, []);
+  }
 }
 
 export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {

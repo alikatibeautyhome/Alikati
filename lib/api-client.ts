@@ -310,9 +310,37 @@ export async function uploadGalleryImage(
   return data.publicUrl;
 }
 
-/** Bucket and prefix that mark a `gallery` object as a watermark asset rather than a photograph. */
-const BRAND_LOGO_BUCKET = 'gallery' as const;
+/** Public bucket for the shop's own small assets, and the per-purpose prefixes inside it. */
+const PUBLIC_ASSET_BUCKET = 'gallery' as const;
 const BRAND_LOGO_PREFIX = 'brand/';
+const PAYMENT_QR_PREFIX = 'payment/';
+const CATEGORY_IMAGE_PREFIX = 'categories/';
+
+/**
+ * Upload a small, shop-owned, world-readable image and return its CDN URL.
+ *
+ * Shared by the watermark logo and the payment QRs: both are the shop's own assets, both belong in
+ * the public `gallery` bucket (which already allows image/png and image/jpeg at 8 MB), and giving
+ * each its own prefix is what lets the delete helpers recognise exactly what they may remove.
+ */
+async function uploadPublicAsset(file: File, prefix: string): Promise<string> {
+  if (isDemoMode()) {
+    // Session-local preview only — nothing is persisted in demo mode.
+    return URL.createObjectURL(file);
+  }
+
+  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase();
+  const path = `${prefix}${crypto.randomUUID()}.${ext}`;
+
+  const supabase = db();
+  const { error } = await supabase.storage
+    .from(PUBLIC_ASSET_BUCKET)
+    .upload(path, file, { upsert: false, cacheControl: '31536000' });
+
+  if (error) throw new Error(`upload(${prefix}): ${error.message}`);
+
+  return supabase.storage.from(PUBLIC_ASSET_BUCKET).getPublicUrl(path).data.publicUrl;
+}
 
 /**
  * Upload the storefront's watermark PNG and return its public URL.
@@ -323,23 +351,24 @@ const BRAND_LOGO_PREFIX = 'brand/';
  * caller stores the returned URL on `salon_settings`.
  */
 export async function uploadBrandLogo(file: File): Promise<string> {
-  if (isDemoMode()) {
-    // Session-local preview only — nothing is persisted in demo mode.
-    return URL.createObjectURL(file);
-  }
-
-  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase();
-  const path = `${BRAND_LOGO_PREFIX}${crypto.randomUUID()}.${ext}`;
-
-  const supabase = db();
-  const { error } = await supabase.storage
-    .from(BRAND_LOGO_BUCKET)
-    .upload(path, file, { upsert: false, cacheControl: '31536000' });
-
-  if (error) throw new Error(`uploadBrandLogo: ${error.message}`);
-
-  return supabase.storage.from(BRAND_LOGO_BUCKET).getPublicUrl(path).data.publicUrl;
+  return uploadPublicAsset(file, BRAND_LOGO_PREFIX);
 }
+
+/**
+ * Upload a payment QR image — the code a customer scans, exported from the provider's own app.
+ *
+ * One per payment account, so the owner adds a second bank or wallet without a developer.
+ */
+export async function uploadPaymentQr(file: File): Promise<string> {
+  return uploadPublicAsset(file, PAYMENT_QR_PREFIX);
+}
+
+/** Upload the shelf image for a category the owner has created. */
+export async function uploadCategoryImage(file: File): Promise<string> {
+  return uploadPublicAsset(file, CATEGORY_IMAGE_PREFIX);
+}
+
+
 
 /**
  * Remove a previously uploaded watermark PNG.
@@ -350,15 +379,25 @@ export async function uploadBrandLogo(file: File): Promise<string> {
  * settings row has already been cleared by the time this runs.
  */
 export async function deleteBrandLogo(url: string | null | undefined): Promise<void> {
+  return deletePublicAsset(url, BRAND_LOGO_PREFIX);
+}
+
+/** Same contract as {@link deleteBrandLogo}, for a replaced or removed payment QR. */
+export async function deletePaymentQr(url: string | null | undefined): Promise<void> {
+  return deletePublicAsset(url, PAYMENT_QR_PREFIX);
+}
+
+/** Shared, conservative removal: only our own bucket, only the expected prefix. */
+async function deletePublicAsset(url: string | null | undefined, prefix: string): Promise<void> {
   if (isDemoMode() || !url) return;
 
-  const marker = `/storage/v1/object/public/${BRAND_LOGO_BUCKET}/${BRAND_LOGO_PREFIX}`;
+  const marker = `/storage/v1/object/public/${PUBLIC_ASSET_BUCKET}/${prefix}`;
   const at = url.indexOf(marker);
   if (at === -1) return;
 
-  const path = BRAND_LOGO_PREFIX + url.slice(at + marker.length).split('?')[0];
+  const path = prefix + url.slice(at + marker.length).split('?')[0];
   try {
-    await db().storage.from(BRAND_LOGO_BUCKET).remove([path]);
+    await db().storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
   } catch {
     // Best-effort: nothing references this file any more either way.
   }

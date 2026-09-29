@@ -29,6 +29,34 @@ export interface ProductCategory {
   updated_at: string;
 }
 
+/** How a payment destination is grouped at checkout. Mirrors the table's CHECK constraint. */
+export type PaymentAccountKind = 'bank' | 'wallet' | 'other';
+
+/**
+ * One payment destination the shop accepts — a bank account, a wallet, or anything else — each with
+ * its own QR (migration 0020).
+ *
+ * Replaces the single `salon_settings.payment_qr_*` pair, which could describe only one
+ * destination. Those columns stay as the fallback for a shop that has created no account rows yet.
+ */
+export interface PaymentAccount {
+  id: string;
+  /** What the customer sees as the option, e.g. "Nabil Bank" or "Khalti". */
+  label: string;
+  kind: PaymentAccountKind;
+  /** Account holder or merchant name. */
+  account_name: string | null;
+  /** Account, mobile or merchant number — shown in full so the payer can check it. */
+  account_number: string | null;
+  /** QR exported from the provider's own app. `null` renders this account without a code. */
+  qr_image_url: string | null;
+  instructions: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
