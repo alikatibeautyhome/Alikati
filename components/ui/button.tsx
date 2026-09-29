@@ -5,7 +5,16 @@ import { cn } from '@/lib/utils';
 export const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-gold focus-visible:ring-offset-2 ' +
-    'focus-visible:ring-offset-cream disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+    'focus-visible:ring-offset-cream disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] ' +
+    /*
+      A 44px minimum touch target on phones only.
+
+      The size variants below are deliberately compact for desktop density — `sm` is 32px tall and
+      `md` is 40px, both under the 44px that a fingertip needs. `min-height` beats `height`, so the
+      floor applies on small screens and `md:min-h-0` hands the height back to the size variant from
+      768px up, which leaves the desktop layout exactly as it was.
+    */
+    'min-h-[44px] md:min-h-0',
   {
     variants: {
       variant: {
@@ -21,7 +30,9 @@ export const buttonVariants = cva(
         sm: 'h-8 px-3 text-xs',
         md: 'h-10 px-5 text-sm',
         lg: 'h-12 px-7 text-base',
-        icon: 'h-9 w-9',
+        // Icon-only buttons need the 44px floor on the width as well — the base rule only sets a
+        // minimum height, and `w-9` is 36px across.
+        icon: 'h-9 w-9 min-w-[44px] md:min-w-0',
       },
     },
     defaultVariants: { variant: 'default', size: 'md' },

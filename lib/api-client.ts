@@ -313,7 +313,12 @@ export async function uploadGalleryImage(
 /** Public bucket for the shop's own small assets, and the per-purpose prefixes inside it. */
 const PUBLIC_ASSET_BUCKET = 'gallery' as const;
 const BRAND_LOGO_PREFIX = 'brand/';
-const PAYMENT_QR_PREFIX = 'payment/';
+/**
+ * Payment QRs get their own prefix, deliberately outside the media library's category folders:
+ * these are configuration, not editorial assets, and they should not appear in a media grid or be
+ * deletable from it.
+ */
+const PAYMENT_QR_PREFIX = 'payment-qr/';
 const CATEGORY_IMAGE_PREFIX = 'categories/';
 
 /**
@@ -366,6 +371,38 @@ export async function uploadPaymentQr(file: File): Promise<string> {
 /** Upload the shelf image for a category the owner has created. */
 export async function uploadCategoryImage(file: File): Promise<string> {
   return uploadPublicAsset(file, CATEGORY_IMAGE_PREFIX);
+}
+
+/**
+ * Upload a file into the media library, under its category's folder.
+ *
+ * The bucket path is `{category_slug}/{filename-ish}`, so the library's folders mirror its
+ * categories and an asset can always be traced back to the category it was filed under.
+ * `uploadPublicAsset` supplies the unique filename.
+ */
+export async function uploadMediaAsset(file: File, categorySlug: string): Promise<string> {
+  return uploadPublicAsset(file, toStorageFolder(categorySlug));
+}
+
+/** Guards the folder segment: a slug from the database, but never trusted into a storage path. */
+export function toStorageFolder(categorySlug: string): string {
+  return `${categorySlug.toLowerCase().replace(/[^a-z0-9-]/g, '')}/`;
+}
+
+/**
+ * Remove a media library file by its stored path.
+ *
+ * Takes the exact path from the `media_assets` row rather than parsing a URL: a URL can be edited
+ * by hand in the database, and guessing a prefix from one is how the wrong object gets deleted. A
+ * failure is swallowed — the row is already gone, and an orphaned file costs a few kilobytes.
+ */
+export async function deleteMediaObject(path: string | null | undefined): Promise<void> {
+  if (isDemoMode() || !path) return;
+  try {
+    await db().storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+  } catch {
+    // Best-effort.
+  }
 }
 
 

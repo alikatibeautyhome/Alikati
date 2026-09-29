@@ -25,6 +25,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/components/shop/CartProvider';
 import { PaymentQR } from '@/components/shop/PaymentQR';
+import { PaymentAccountTabs } from '@/components/shop/PaymentAccountTabs';
 import { useAuth } from '@/components/account/AuthProvider';
 import { toOrderItems } from '@/lib/cart';
 import { DELIVERY_CITIES, PAYMENT_METHOD_LABELS } from '@/lib/commerce';
@@ -41,12 +42,7 @@ const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 /** File types the private `payment-proofs` bucket accepts. */
 const PROOF_ACCEPT = 'image/png,image/jpeg,image/webp,image/heic,application/pdf';
 
-/** Customer-facing wording for each payment account type. */
-const PAYMENT_KIND_LABELS: Record<PaymentAccount['kind'], string> = {
-  bank: 'Bank transfer',
-  wallet: 'Mobile wallet',
-  other: 'Other',
-};
+
 
 /** Exact copy shown for each failure class — kept in one place so support can quote it. */
 const FAILURE_MESSAGES = {
@@ -785,45 +781,14 @@ export function CheckoutForm({
           {isDigitalPayment && (
             <div className="space-y-4 rounded-2xl border border-rose-gold/20 bg-cream-100/60 p-4 sm:p-5">
               {paymentAccounts.length > 0 ? (
-                /* One block per configured account, so a customer can pick the bank or wallet that
-                   suits them instead of being shown a single destination. */
-                <div className="space-y-4">
-                  {paymentAccounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className="space-y-3 rounded-xl border border-charcoal/10 bg-white/70 p-4"
-                    >
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="text-sm font-semibold text-charcoal">{account.label}</p>
-                        <span className="rounded-full bg-charcoal/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-charcoal-soft">
-                          {PAYMENT_KIND_LABELS[account.kind]}
-                        </span>
-                      </div>
-
-                      {account.account_name || account.account_number ? (
-                        <p className="text-xs text-charcoal-soft">
-                          {[account.account_name, account.account_number].filter(Boolean).join(' · ')}
-                        </p>
-                      ) : null}
-
-                      {account.qr_image_url ? (
-                        <PaymentQR
-                          enabled
-                          imageUrl={account.qr_image_url}
-                          note={account.instructions}
-                          /* Live total, so the QR re-draws when quantities, coupon or delivery change. */
-                          amount={payableTotal}
-                          currencyLabel="रू"
-                          className="max-w-full"
-                        />
-                      ) : account.instructions ? (
-                        <p className="whitespace-pre-line text-xs text-charcoal-soft">
-                          {account.instructions}
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
+                /* A tab per provider the shop actually accepts. The transaction code and the
+                   screenshot inputs below are steps 2 and 3 of the list this renders, which is why
+                   they sit directly underneath rather than further down the form. */
+                <PaymentAccountTabs
+                  accounts={paymentAccounts}
+                  amount={payableTotal}
+                  currencyLabel="रू"
+                />
               ) : (
                 /* No accounts configured yet: the single QR from settings, exactly as before. */
                 <PaymentQR

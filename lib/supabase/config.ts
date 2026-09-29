@@ -45,9 +45,22 @@ export const DEMO_CUSTOMER = {
   storageKey: 'abh_demo_customer_session',
 } as const;
 
-/** Canonical site URL used for metadata, sitemap and Open Graph tags. */
+/** The shop's real origin, used when no override is configured. */
+const CANONICAL_ORIGIN = 'https://alikatibeautyhome.com';
+
+/**
+ * Canonical site URL used for metadata, sitemap and Open Graph tags.
+ *
+ * The fallback is the production domain rather than `localhost`, deliberately. It used to be
+ * `localhost:3000`, which meant that whenever `NEXT_PUBLIC_SITE_URL` was unset — or left pointing at
+ * a temporary tunnel by an earlier preview — the *production* sitemap and every `og:image`
+ * advertised that throwaway host, so shared product links sent people to a dead address.
+ *
+ * An absolute URL that resolves is a much better failure mode than one that cannot: at worst a
+ * preview build points its absolute URLs at production, which is harmless.
+ */
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL || CANONICAL_ORIGIN).replace(/\/$/, '');
 }
 
 /** Fallback contact numbers when `salon_settings` has not been loaded. */

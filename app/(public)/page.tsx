@@ -141,7 +141,12 @@ export default async function HomePage() {
     promo: <PromoBand settings={settings} />,
 
     services: (
-      <section id="featured-services" className="section scroll-mt-20">
+      /*
+        `hidden md:block`: the full service rail is a long scroll on a phone and pushes the shop —
+        the thing a mobile visitor most often came for — well down the page. Services keep their own
+        page, reachable from the nav and the footer. Desktop is untouched.
+      */
+      <section id="featured-services" className="section hidden scroll-mt-20 md:block">
         <div className="container">
           <ServiceRail
             services={featured}
@@ -201,7 +206,11 @@ export default async function HomePage() {
     ),
 
     portfolio: (
-      <section className="section bg-cream-100">
+      /*
+        Hidden below md for the same reason as the service rail: a large image grid a phone visitor
+        scrolls past to reach the shop. The portfolio has its own page.
+      */
+      <section className="section hidden bg-cream-100 md:block">
         <div className="container space-y-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0 space-y-2">

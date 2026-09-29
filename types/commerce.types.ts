@@ -29,25 +29,30 @@ export interface ProductCategory {
   updated_at: string;
 }
 
-/** How a payment destination is grouped at checkout. Mirrors the table's CHECK constraint. */
-export type PaymentAccountKind = 'bank' | 'wallet' | 'other';
-
 /**
- * One payment destination the shop accepts — a bank account, a wallet, or anything else — each with
- * its own QR (migration 0020).
- *
- * Replaces the single `salon_settings.payment_qr_*` pair, which could describe only one
- * destination. Those columns stay as the fallback for a shop that has created no account rows yet.
+ * Which service a payment destination belongs to. Mirrors the table's CHECK constraint, and drives
+ * the tab the customer sees at checkout.
  */
+export type PaymentProvider = 'esewa' | 'khalti' | 'bank' | 'other';
+
+/** One payment destination the shop accepts — a wallet or a bank — each with its own QR. */
 export interface PaymentAccount {
   id: string;
-  /** What the customer sees as the option, e.g. "Nabil Bank" or "Khalti". */
-  label: string;
-  kind: PaymentAccountKind;
-  /** Account holder or merchant name. */
+  /** The service the money goes to. */
+  provider: PaymentProvider;
+  /**
+   * Optional display override. `null` names the account after its provider, which is the normal
+   * case — it exists only so a shop with two accounts at the same provider can tell them apart.
+   */
+  label: string | null;
+  /** Account holder or merchant name, e.g. "Nirmala Khadka". */
   account_name: string | null;
-  /** Account, mobile or merchant number — shown in full so the payer can check it. */
-  account_number: string | null;
+  /** Wallet/mobile number, or the bank account number. */
+  account_identifier: string | null;
+  /** Bank only; `null` for wallets. */
+  bank_name: string | null;
+  /** Bank only; `null` for wallets. */
+  bank_branch: string | null;
   /** QR exported from the provider's own app. `null` renders this account without a code. */
   qr_image_url: string | null;
   instructions: string | null;

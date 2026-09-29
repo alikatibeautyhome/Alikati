@@ -15,6 +15,7 @@ import {
   Scissors,
   Settings,
   Share2,
+  FolderOpen,
   ShieldCheck,
   Star,
   Ticket,
@@ -39,6 +40,9 @@ const SALON_ITEMS: NavItem[] = [
   { href: '/admin/services', label: 'Services', icon: Scissors },
   { href: '/admin/leads', label: 'Leads', icon: GraduationCap },
   { href: '/admin/gallery', label: 'Media', icon: Images },
+  // Distinct from the entry above: that one curates the public portfolio, while this one is the
+  // catalogue of everything uploaded, filed by category.
+  { href: '/admin/media', label: 'Media library', icon: FolderOpen },
 ];
 
 /** Shop operations. */

@@ -91,12 +91,15 @@ export async function getPaymentAccounts(): Promise<PaymentAccount[]> {
 }
 
 export async function upsertPaymentAccount(
-  input: Partial<PaymentAccount> & { label: string }
+  // `provider` is the one field the table insists on and the checkout's tabs are built from, so it
+  // is required here. Everything else has a sensible absence: no label means "name it after the
+  // provider", and no bank details means "this is a wallet".
+  input: Partial<PaymentAccount> & { provider: PaymentAccount['provider'] }
 ): Promise<PaymentAccount> {
   // Demo mode has no payment rows. Echoing the input keeps the form usable without pretending a
   // write happened.
   if (isDemoMode()) {
-    return { id: input.id ?? crypto.randomUUID(), kind: 'bank', ...input } as PaymentAccount;
+    return { id: input.id ?? crypto.randomUUID(), ...input } as PaymentAccount;
   }
 
   return unwrap(
