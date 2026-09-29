@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Loader2, Trash2, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Field } from '@/components/ui/label';
-import { getProductCategories, uploadProductImage, upsertProduct } from '@/lib/shop-admin-api';
+import { getProductCategories, upsertProduct } from '@/lib/shop-admin-api';
+import { ProductImageUpload } from '@/components/admin/ProductImageUpload';
 import type { Product, ProductCategory } from '@/types/commerce.types';
 
 const SHORT_DESCRIPTION_MAX = 240;
@@ -135,10 +135,6 @@ export function ProductFormModal({
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
   // Reset the form whenever the modal is (re)opened for a given product.
   useEffect(() => {
     if (!open) return;
@@ -146,7 +142,6 @@ export function ProductFormModal({
     setSlugTouched(Boolean(product));
     setErrors({});
     setSaving(false);
-    setUploadError(null);
   }, [open, product]);
 
   // Categories are only needed while the dialog is visible.
@@ -179,23 +174,6 @@ export function ProductFormModal({
       // Auto-derive the slug only while creating and before the user edits it.
       slug: !isEdit && !slugTouched ? localSlugify(value) : prev.slug,
     }));
-  }
-
-  async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-
-    setUploading(true);
-    setUploadError(null);
-    try {
-      const url = await uploadProductImage(file);
-      patch('image_url', url);
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Could not upload the image.');
-    } finally {
-      setUploading(false);
-    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -552,67 +530,8 @@ export function ProductFormModal({
           </Field>
         </div>
 
-        <Field label="Image" htmlFor="product-image" hint="Paste a public URL or upload a file.">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              id="product-image"
-              value={form.image_url}
-              onChange={(event) => patch('image_url', event.target.value)}
-              placeholder="https://…"
-              autoComplete="off"
-              className="min-w-[200px] flex-1"
-            />
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => void handleFile(event)}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              aria-label="Upload product image"
-            >
-              {uploading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-              ) : (
-                <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
-              Upload
-            </Button>
-            {form.image_url.trim() ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => patch('image_url', '')}
-                aria-label="Remove product image"
-                className="text-danger hover:bg-danger/10"
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              </Button>
-            ) : null}
-          </div>
-        </Field>
-
-        {form.image_url.trim() ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={form.image_url}
-            alt="Product preview"
-            className="h-28 w-28 rounded-xl border border-charcoal/10 object-cover"
-          />
-        ) : null}
-
-        {uploadError ? (
-          <p role="alert" className="text-xs font-medium text-danger">
-            {uploadError}
-          </p>
-        ) : null}
+        {/* Upload, preview and the paste-a-URL fallback live together in one section. */}
+        <ProductImageUpload value={form.image_url} onChange={(url) => patch('image_url', url)} />
 
         <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2 text-sm text-charcoal">

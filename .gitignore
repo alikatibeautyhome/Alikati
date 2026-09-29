@@ -45,4 +45,9 @@ CONNECTION.secrets.md
 # supabase local stack
 /supabase/.branches
 /supabase/.temp
-.env*
+
+# Database snapshots taken before a destructive catalogue change.
+# These are full row dumps: products, categories, orders AND order_items, which carry real
+# customers' names, phone numbers, emails and delivery addresses. They are a rollback aid, never
+# source. Committing them would publish personal data — the repo is public.
+/backups/

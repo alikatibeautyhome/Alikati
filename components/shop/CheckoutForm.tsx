@@ -64,8 +64,8 @@ const FIELD_INPUT_IDS: Record<string, string> = {
 const UNMAPPED_FIELD_KEYS = ['items', 'payment_method', 'customer_id'] as const;
 
 /**
- * Normalises any way a customer might type their number — `+977 982-5679585`,
- * `9779825679585`, `09825679585` or `9825679585` — to the canonical 10-digit local form.
+ * Normalises any way a customer might type their number — `+977 980-0000000`,
+ * `9779800000000`, `09800000000` or `9800000000` — to the canonical 10-digit local form.
  *
  * Returns `''` when it cannot be read as a Nepali mobile, so callers can show one clear
  * message instead of submitting a number the server would reject.

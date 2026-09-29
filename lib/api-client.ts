@@ -11,6 +11,8 @@
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { DEMO_CREDENTIALS, isDemoMode } from '@/lib/supabase/config';
 import { demoDb } from '@/lib/demo-data';
+import { demoCommerceDb } from '@/lib/demo-commerce';
+import { needsStockAlert, sortByUrgency, type StockAlertProduct } from '@/lib/stock-alerts';
 import type {
   AcademyCourse,
   AcademyLead,
@@ -308,6 +310,60 @@ export async function uploadGalleryImage(
   return data.publicUrl;
 }
 
+/** Bucket and prefix that mark a `gallery` object as a watermark asset rather than a photograph. */
+const BRAND_LOGO_BUCKET = 'gallery' as const;
+const BRAND_LOGO_PREFIX = 'brand/';
+
+/**
+ * Upload the storefront's watermark PNG and return its public URL.
+ *
+ * Shares the public `gallery` bucket with the other uploaded imagery — it already allows image/png
+ * up to 8 MB — but keeps its own `brand/` prefix so the asset is not mixed in with gallery photos,
+ * and so `deleteBrandLogo` can recognise what it is allowed to remove. Nothing is written here: the
+ * caller stores the returned URL on `salon_settings`.
+ */
+export async function uploadBrandLogo(file: File): Promise<string> {
+  if (isDemoMode()) {
+    // Session-local preview only — nothing is persisted in demo mode.
+    return URL.createObjectURL(file);
+  }
+
+  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase();
+  const path = `${BRAND_LOGO_PREFIX}${crypto.randomUUID()}.${ext}`;
+
+  const supabase = db();
+  const { error } = await supabase.storage
+    .from(BRAND_LOGO_BUCKET)
+    .upload(path, file, { upsert: false, cacheControl: '31536000' });
+
+  if (error) throw new Error(`uploadBrandLogo: ${error.message}`);
+
+  return supabase.storage.from(BRAND_LOGO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/**
+ * Remove a previously uploaded watermark PNG.
+ *
+ * Deliberately conservative: it acts only on an object inside our own `gallery` bucket under the
+ * `brand/` prefix. A logo URL pasted from somewhere else is left strictly alone, and a failure is
+ * swallowed — an orphaned file is a trivial cost whereas deleting the wrong object is not, and the
+ * settings row has already been cleared by the time this runs.
+ */
+export async function deleteBrandLogo(url: string | null | undefined): Promise<void> {
+  if (isDemoMode() || !url) return;
+
+  const marker = `/storage/v1/object/public/${BRAND_LOGO_BUCKET}/${BRAND_LOGO_PREFIX}`;
+  const at = url.indexOf(marker);
+  if (at === -1) return;
+
+  const path = BRAND_LOGO_PREFIX + url.slice(at + marker.length).split('?')[0];
+  try {
+    await db().storage.from(BRAND_LOGO_BUCKET).remove([path]);
+  } catch {
+    // Best-effort: nothing references this file any more either way.
+  }
+}
+
 /* ------------------------------------------------------------- appointments */
 
 export async function getAppointmentsByDate(date: string): Promise<Appointment[]> {
@@ -321,6 +377,32 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
       .order('booking_time', { ascending: true }),
     'getAppointmentsByDate'
   ) as Appointment[];
+}
+
+/**
+ * Products at or below their own restock threshold, worst first — the admin console's stock alert.
+ *
+ * Filtered in JS rather than in the query because "at or below **its own** threshold" compares two
+ * columns, which PostgREST filters cannot express. The catalogue is small (tens of rows, not
+ * thousands), so reading the active rows and comparing locally is the simpler correct answer.
+ *
+ * Out-of-stock rows are included: `needsStockAlert` treats an empty shelf as the most urgent case
+ * rather than excluding it, unlike the storefront's own "low stock" badge.
+ */
+export async function getLowStockProducts(): Promise<StockAlertProduct[]> {
+  if (isDemoMode()) {
+    return sortByUrgency(demoCommerceDb.getProducts().filter(needsStockAlert));
+  }
+
+  const rows = (unwrap(
+    await db()
+      .from('products')
+      .select('id, name, slug, stock_qty, low_stock_threshold')
+      .eq('is_active', true),
+    'getLowStockProducts'
+  ) ?? []) as StockAlertProduct[];
+
+  return sortByUrgency(rows.filter(needsStockAlert));
 }
 
 export async function getAppointmentsInRange(

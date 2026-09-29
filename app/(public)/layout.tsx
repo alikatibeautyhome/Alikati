@@ -5,6 +5,8 @@ import { SiteHeader } from '@/components/public/SiteHeader';
 import { SiteFooter } from '@/components/public/SiteFooter';
 import { WhatsAppFloatingButton } from '@/components/public/WhatsAppFloatingButton';
 import { CartProvider } from '@/components/shop/CartProvider';
+import { WatermarkProvider } from '@/components/shop/WatermarkProvider';
+import { watermarkConfigFromSettings } from '@/lib/watermark';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { AuthProvider } from '@/components/account/AuthProvider';
@@ -71,7 +73,12 @@ export default async function PublicLayout({ children }: { children: React.React
 
         <SiteHeader settings={settings} />
 
-        <main id="main-content">{children}</main>
+        {/* The product-image badge: the settings are read once here and handed to every card, so no
+            card has to fetch anything of its own just to draw a logo. Scoped to the page content
+            because that is the only place product imagery appears. */}
+        <WatermarkProvider value={watermarkConfigFromSettings(settings)}>
+          <main id="main-content">{children}</main>
+        </WatermarkProvider>
 
         <SiteFooter settings={settings} />
         <WhatsAppFloatingButton settings={settings} />

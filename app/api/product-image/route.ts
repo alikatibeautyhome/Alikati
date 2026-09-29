@@ -121,6 +121,19 @@ export async function GET(request: NextRequest) {
   const format: 'webp' | 'png' | 'jpeg' =
     formatParam === 'png' || formatParam === 'jpeg' ? formatParam : 'webp';
 
+  /**
+   * `?strip=off` skips the supplier-mark boxes for a single request.
+   *
+   * The boxes below are measured geometry belonging to one supplier's packshots. Another supplier's
+   * photos can carry no mark at all, so the same boxes erase the product instead of a watermark —
+   * `lib/product-image.ts` sets this flag for those sources. The white canvas and the salon's mark
+   * still apply, so branded output is unaffected; only the erasing step is skipped.
+   */
+  const stripRequested = request.nextUrl.searchParams.get('strip') !== 'off';
+
+  /** `?mark=off` leaves out the salon's own mark, for callers that overlay it in the DOM instead. */
+  const markRequested = request.nextUrl.searchParams.get('mark') !== 'off';
+
   if (!src) {
     return NextResponse.json({ error: 'Missing ?src=' }, { status: 400 });
   }
@@ -138,6 +151,26 @@ export async function GET(request: NextRequest) {
   if (!(await isSafeHost(target.hostname))) {
     return NextResponse.json({ error: 'That host is not allowed.' }, { status: 403 });
   }
+
+  /**
+   * Photographs the owner uploaded through the admin console come from our own Storage bucket.
+   *
+   * Those files never carry a supplier watermark, so the erasing boxes would do nothing but paint
+   * white over real content — the same failure the `?strip=off` flag exists for, except this case is
+   * not per-caller, it is per-source. Detecting the host is what keeps uploads safe without asking
+   * every call site to remember the flag. External supplier hosts are unaffected.
+   */
+  const isOwnStorage = (() => {
+    const configured = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!configured) return false;
+    try {
+      return new URL(configured).hostname === target.hostname;
+    } catch {
+      return false;
+    }
+  })();
+
+  const stripMarks = STRIP_WATERMARK && stripRequested && !isOwnStorage;
 
   /* ── fetch the original ─────────────────────────────────────────────────────────────────── */
   let upstream: Response;
@@ -193,7 +226,7 @@ export async function GET(request: NextRequest) {
     const layers: Sharp.OverlayOptions[] = [];
     const isPackshot = Math.abs(width / height - 1) <= SQUARE_TOLERANCE;
 
-    if (STRIP_WATERMARK && isPackshot) {
+    if (stripMarks && isPackshot) {
       for (const mark of SUPPLIER_MARKS) {
         layers.push({
           input: {
@@ -210,13 +243,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const logoWidth = Math.max(24, Math.round(width * BRAND_MARK.w));
-    const logo = await brandMark(logoWidth);
-    layers.push({
-      input: logo,
-      top: Math.round(height * BRAND_MARK.y),
-      left: Math.round(width * BRAND_MARK.x),
-    });
+    /**
+     * `?mark=off` omits the salon's own mark.
+     *
+     * The storefront draws that badge in the DOM over the image (`WatermarkBadge`), so baking it here
+     * as well would print it twice on every card. Only the surfaces that render an overlay ask for
+     * this; link previews, order confirmations, WhatsApp messages, the cart and the admin console
+     * request the image without the flag and keep the baked mark.
+     */
+    if (markRequested) {
+      const logoWidth = Math.max(24, Math.round(width * BRAND_MARK.w));
+      const logo = await brandMark(logoWidth);
+      layers.push({
+        input: logo,
+        top: Math.round(height * BRAND_MARK.y),
+        left: Math.round(width * BRAND_MARK.x),
+      });
+    }
 
     // The canvas starts white, so a source with transparency lands on white rather than black.
     /**

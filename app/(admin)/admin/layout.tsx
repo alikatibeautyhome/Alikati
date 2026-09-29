@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, LogOut, Menu } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { LowStockAlert } from '@/components/admin/LowStockAlert';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { getAppointmentsByDate, getCurrentStaff, signOutStaff } from '@/lib/api-client';
@@ -131,6 +132,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Bell className="h-3.5 w-3.5" aria-hidden="true" />
               {pendingCount} pending
             </Link>
+
+            {/* Self-fetching and self-polling, so the toolbar passes nothing to it. */}
+            <LowStockAlert />
 
             <ThemeToggle />
 

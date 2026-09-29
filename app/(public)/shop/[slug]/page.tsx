@@ -8,6 +8,8 @@ import { getSalonSettings } from '@/lib/api';
 import { AddToCartPanel } from '@/components/shop/AddToCartPanel';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { productImageSrc, productImageSrcAbsolute } from '@/lib/product-image';
+import { WatermarkBadge } from '@/components/shop/WatermarkBadge';
+import { isWatermarkVisible, watermarkConfigFromSettings } from '@/lib/watermark';
 import { Badge } from '@/components/ui/badge';
 import {
   isLowStock,
@@ -65,7 +67,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const discount = productDiscountPercent(product);
   const price = productPrice(product);
-  const imageSrc = productImageSrc(product.image_url);
+  /*
+    The badge below is drawn in the DOM, so the image is requested without the baked mark or the
+    logo would appear twice. Decided here rather than in the client so `og:image` — which is built
+    separately from `productImageSrcAbsolute` and keeps the baked mark — stays untouched.
+  */
+  const badgeVisible = isWatermarkVisible(watermarkConfigFromSettings(settings));
+  const imageSrc = productImageSrc(product.image_url, undefined, { brandMark: !badgeVisible });
   const outOfStock = isOutOfStock(product);
   const lowStock = isLowStock(product);
 
@@ -107,6 +115,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 -{discount}%
               </span>
             )}
+
+            {/* Brand badge, bottom-left over the product photo. Draws nothing when switched off or
+                when no logo has been uploaded. */}
+            <WatermarkBadge />
           </div>
 
           <div className="space-y-5">

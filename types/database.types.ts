@@ -137,6 +137,17 @@ export interface SalonSettings {
   /** Show Bikram Sambat dates alongside AD dates. */
   nepali_dates: boolean;
 
+  /* ── Product watermark badge (migration 0019) ──────────────────────────────── */
+  /** Master switch for the brand badge over product imagery. */
+  watermark_enabled: boolean;
+  /**
+   * Public URL of the uploaded PNG brand mark. `null` means nothing has been uploaded, and the
+   * storefront then renders no badge at all rather than an empty box.
+   */
+  watermark_logo_url: string | null;
+  /** Badge height in CSS pixels. The database constrains this to 32–64. */
+  watermark_size_px: number;
+
   /* ── Editable landing-page hero (migration 0013) ───────────────────────────── */
   /** Uploaded hero photograph; falls back to the bundled placeholder when null. */
   hero_image_url: string | null;

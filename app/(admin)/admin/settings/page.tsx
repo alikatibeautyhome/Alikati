@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { HeroSlideshowManager } from '@/components/admin/HeroSlideshowManager';
 import { ImageUploadDropzone } from '@/components/admin/ImageUploadDropzone';
+import { WatermarkSettingsCard } from '@/components/admin/WatermarkSettingsCard';
 import { PaymentQR } from '@/components/shop/PaymentQR';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1004,6 +1005,9 @@ export default function AdminSettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Saves itself: deliberately outside the form above, so an unrelated Save cannot revert a logo. */}
+      <WatermarkSettingsCard />
 
       <Card>
         <CardHeader>

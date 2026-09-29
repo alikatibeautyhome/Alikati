@@ -7,7 +7,10 @@ import { ShoppingCart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCart } from '@/components/shop/CartProvider';
+import { WatermarkBadge } from '@/components/shop/WatermarkBadge';
+import { useWatermark } from '@/components/shop/WatermarkProvider';
 import { productImageSrc } from '@/lib/product-image';
+import { isWatermarkVisible } from '@/lib/watermark';
 import {
   isLowStock,
   isOutOfStock,
@@ -59,7 +62,15 @@ export function ProductCard({
   const price = productPrice(product);
   // Routed through the processing endpoint: white canvas, supplier watermark removed, salon mark
   // stamped. See app/api/product-image/route.ts.
-  const imageSrc = productImageSrc(product.image_url, PLACEHOLDER);
+  /*
+    When the badge is drawn in the DOM below, the image is requested *without* the baked mark —
+    otherwise the logo would be printed twice, once in the pixels and once on top of them.
+    Surfaces that render no overlay (link previews, order confirmations, WhatsApp messages, the
+    admin console) keep requesting the image with the mark baked in.
+  */
+  const watermark = useWatermark();
+  const badgeVisible = isWatermarkVisible(watermark);
+  const imageSrc = productImageSrc(product.image_url, PLACEHOLDER, { brandMark: !badgeVisible });
 
   const ratingValue = typeof product.rating_average === 'number' ? product.rating_average : null;
   const ratingCount = typeof product.rating_count === 'number' ? product.rating_count : 0;
@@ -78,7 +89,7 @@ export function ProductCard({
     <Card className={cn('flex h-full flex-col overflow-hidden', className)}>
       <Link
         href={`/shop/${product.slug}`}
-        className="product-media relative block aspect-[4/3] w-full bg-[#ffffff]"
+        className="product-media relative block aspect-[4/3] w-full overflow-hidden bg-[#ffffff]"
       >
         {/*
           White canvas + `object-contain`: the whole product is shown on white rather than
@@ -102,9 +113,21 @@ export function ProductCard({
             -{discount}%
           </span>
         )}
+
+        {/* Brand badge, bottom-left over the product photo. Draws nothing at all when the admin
+            has switched it off or has not uploaded a logo. */}
+        <WatermarkBadge />
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3 sm:p-4 lg:p-5">
+        {/* Category chip. Rendered only when the joined relation is present, so a card built from a
+            query that does not select `category:product_categories(...)` simply omits it. */}
+        {product.category?.name ? (
+          <span className="w-fit rounded-full bg-charcoal/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-charcoal-soft ring-1 ring-inset ring-charcoal/10">
+            {product.category.name}
+          </span>
+        ) : null}
+
         {/* Clamped to three lines on phones: the imported supplier names are long, and at 390px a
             two-line clamp cut most of them off mid-word. Still two lines from `sm` up. */}
         <h3 className="line-clamp-3 break-words font-display text-base leading-snug text-charcoal sm:line-clamp-2 sm:text-lg">
@@ -154,14 +177,26 @@ export function ProductCard({
             )}
           </p>
 
-          <p
+          {/*
+            Availability badge, carrying the unit count.
+
+            The low and out-of-stock states already state their own figure through `stockLabel`
+            ("Only 4 left"), so only the healthy case needs a number adding — it would otherwise
+            read a bare "In stock". No stock rule is re-derived here: `outOfStock` and `lowStock`
+            come from `lib/commerce.ts`.
+          */}
+          <span
             className={cn(
-              'text-xs font-medium',
-              outOfStock ? 'text-danger' : lowStock ? 'text-warn' : 'text-success'
+              'inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset',
+              outOfStock
+                ? 'bg-danger/10 text-danger ring-danger/25'
+                : lowStock
+                  ? 'bg-warn/10 text-warn ring-warn/25'
+                  : 'bg-success/10 text-success ring-success/25'
             )}
           >
-            {stockLabel(product)}
-          </p>
+            {outOfStock || lowStock ? stockLabel(product) : `${product.stock_qty} in stock`}
+          </span>
 
           {outOfStock ? (
             <Button

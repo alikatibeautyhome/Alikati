@@ -658,7 +658,8 @@ No credential is stored in this repository.
   subtotal रू 810 + delivery रू 150 = total रू 960, correct in the response, in the database and
   in the WhatsApp message — then rolled back (order deleted, stock restored)
 - Nothing test-related was left behind; the only order in the database is the owner's own
-  `ABH-ORD-869DF5` (Pradeep Deuba), which was left untouched
+  `ABH-ORD-869DF5`, which was left untouched (the customer name on it is omitted here so the
+  repository carries no personal details)
 
 ### Still empty on purpose
 
@@ -715,8 +716,10 @@ coupon, not the payment method, and not a temporary glitch.
   re-drawn whenever the cart, coupon or delivery cost changes. The total is **always printed
   beside the code** too, because whether a wallet pre-fills the amount depends on the provider's
   QR format — a provider-validated dynamic QR needs Fonepay/eSewa merchant credentials.
-- **Phone normalisation** — `+977 982-5679585`, `9779825679585`, `09825679585` and `9825679585`
-  all normalise to `9825679585`, on blur and on submit, with a clear inline message otherwise.
+- **Phone normalisation** — `+977 980-0000000`, `9779800000000`, `09800000000` and `9800000000`
+  all normalise to `9800000000`, on blur and on submit, with a clear inline message otherwise.
+  (The example number is fictional. A real customer's number used to sit here and was replaced, so
+  that publishing this repository cannot expose anyone's details.)
 - **Product images in the order views** — thumbnails beside every line item in the admin order
   detail (and a compact one in the list row), and on the customer's order confirmation. Resolved
   by product id with one cached lookup per page, falling back to the snapshot stored on the order

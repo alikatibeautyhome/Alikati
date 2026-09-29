@@ -727,3 +727,207 @@ still appears inside the `src` parameter of the image URL — unavoidable while 
 invisible to a visitor, but it is in the page source. Output is cached seven days, with the upstream
 fetch revalidated weekly, so a supplier replacing a photo propagates within a week. And 19 wide
 banner images keep their own layout (see the tolerance guard above).
+
+---
+
+## v1.17 — The Well 10 Professional showcase at `/well10`
+
+**Delivered**
+- `lib/well10-catalog.ts` — the nine-SKU Well 10 range. Prices, pack sizes, pack counts and
+  descriptions are exactly as the owner supplied them, and both order-summary figures are
+  **derived** by `summariseWell10()` rather than written down twice.
+- `components/shop/Well10Showcase.tsx` — the section: dark slate surfaces with gold accents,
+  search, a family filter (Treatments / Shampoos / Serums), and a responsive card grid whose tiles
+  carry a category chip, size badge, pack-quantity badge, price and a WhatsApp enquiry button, plus
+  a branded fallback tile for any card without a photograph.
+- `app/(public)/well10/page.tsx` — the route, with SEO metadata and `ItemList` structured data
+  (name, brand, image, description, price only — see the caveats).
+- A `Well10` entry in the header navigation and in `sitemap.ts`.
+- `?strip=off` on `/api/product-image`, plus an optional third argument on `productImageSrc()`.
+
+**Why the new route parameter.** The Well 10 photographs are the first source in this project that
+carries **no** supplier watermark. The erasing boxes were measured against the colourpluscosmetics
+set (v1.15), so on these images they removed real product content instead of a mark — clipping the
+base of the Luxury Spa tub and its "1 LITRE" label. `strip=off` skips that single step per request
+while the white canvas and the salon's mark still apply, so branded output is unchanged. The
+default is untouched: `/shop` still strips.
+
+**Verified**
+- `tsc --noEmit --incremental false` clean; `npm run build` clean, `/well10` at 7.48 kB.
+- 29 unit assertions run against the shipped catalogue module: the two figures (76 units and
+  Rs 1,48,020), every filter and search combination, and the enquiry link's number and contents.
+- Rendered output: all 9 titles, 9 cards, the counters, 9 enquiry links to the live business
+  number, 3 fallback tiles and 1 representative-photo chip.
+- No regression: `/well10` sends `strip=off` on every image request, `/shop` sends none on any of
+  its 1,870.
+- `npm run test:db` is unchanged at 64 passing assertions — this release touches no SQL.
+
+**Caveats, stated plainly.** Three of the nine SKUs — both Brilliance Red jars and the No Yellow
+Purple Shampoo — are not listed on the supplier's store, so they carry neither a photograph nor a
+source link; their cards show a branded "Photo pending" tile rather than borrowing a picture of a
+different product. The 50 ml serum uses the supplier's genuine Golden Serum shot with a
+"Representative photo" chip, because the supplier pictures only the 100 ml. Prices are the shop's
+own and differ from the supplier's retail in places (Rs 390 vs Rs 350 on the 100 ml serum) — that is
+landed cost and margin, not a transcription error. The summary renders `Rs 1,48,020` in the
+project's documented `en-IN` grouping.
+
+**What this section deliberately cannot do.** It has no "add to cart". These SKUs are physically on
+the shelf but have no `products` row, so an order for them would be rejected by the
+`order_items` foreign key — the same failure mode v1.12 fixed for staff checkout. The call to action
+is a WhatsApp enquiry quoting the catalogue price. Importing the range into the catalogue is what
+unlocks checkout, and that is a write to the live database, so it needs the owner's go-ahead.
+
+---
+
+## v1.18 — The catalogue is replaced by the Well 10 range
+
+At the owner's instruction, the live catalogue was cleared and rebuilt around the nine Well 10 SKUs.
+
+**Delivered**
+- **All 170 products deleted** from `public.products`, after taking a full snapshot to
+  `backups/catalogue-before-well10-*.json` (products, categories, orders and order items).
+- **The 7 generic categories deactivated** (Skincare, Makeup, Hair Care, Nail Care, Fragrance,
+  Bath & Body, Tools & Accessories). Their rows remain; they no longer appear as shop filters.
+- **One active category created: `Well10`**, and all nine products filed under it.
+- **The 9 SKUs inserted** with the owner's exact names, prices, descriptions and stock counts —
+  stock 1, 6, 15, 1, 7, 16, 12, 14, 4 (76 units, Rs 1,48,020 at cost-in-rack value).
+- `ProductCard` now renders a **category chip** and an **availability badge carrying the unit
+  count** ("16 in stock" / "Only 1 left" / "Out of stock"), so the card shows image, title,
+  category, description, price and stock as the owner specified.
+- The `/well10` showcase realigned to the same names, descriptions, prices and stock, and each card
+  now hands off to its real product page (`/shop/<slug>`) instead of the supplier's site.
+
+**The delete was safe by construction, and that was checked first.** `order_items.product_id` is
+`ON DELETE SET NULL` (migration 0004) and every order item keeps its own `product_name` snapshot, so
+deleting the catalogue did not disturb order history: all 7 items across the 5 orders survive, with
+`product_id` nulled. No other table references `products`.
+
+**Verified**
+- Live database re-read after the write: 9 products, 1 active category, 0 leaked categories.
+- Rendered `/shop`: 9 titles, 9 `Well10` chips, 9 availability badges matching the stock figures,
+  9 descriptions, 9 prices, 9 product links; **0 occurrences** of any deactivated category name.
+- Category filter offers exactly `All` + `Well10`.
+- All 8 product photographs return `200 image/*` through `/api/product-image` — including the two
+  new retailer hosts (Daraz Nepal, Flipkart), which were not previously used by this project.
+- A product detail page renders its title, price, stock and description.
+- `tsc --noEmit --incremental false` clean; `--noUnusedLocals` clean; `npm run build` clean.
+- 9 unit assertions against the catalogue module pass, including that its stock and price figures
+  match the database row for row.
+
+**Caveats, stated plainly.** (1) The No Yellow Purple Shampoo has no photograph, because none exists
+on any public listing — its card shows the shop placeholder until a real photo arrives. (2) The
+`/well10` showcase now carries a **second copy** of the stock numbers; `public.products` is the
+system of record, so a console stock edit must be mirrored in `lib/well10-catalog.ts`. Pointing the
+showcase at the database instead is the durable fix, and was out of scope here. (3) All nine rows
+are flagged `is_featured = true` so the home page's featured rail is not left empty by the wipe —
+that is a merchandising choice, not a requirement, and is easy to change. (4) The golden serum 50 ml
+uses the 100 ml photograph, flagged in the showcase; the shop card itself cannot flag it.
+
+---
+
+## v1.19 — Admin-configurable watermark badge
+
+**Delivered**
+- **Migration 0019** adds `watermark_enabled` (default `true`), `watermark_logo_url` and
+  `watermark_size_px` (default `44`, `CHECK 32–64`) to `salon_settings`. Applied to the live project.
+- **`WatermarkSettingsCard`** on the admin Settings page: drag-and-drop or click to upload a **PNG
+  only** (validated for MIME type and the bucket's 8 MB ceiling before the request), live preview
+  rendered against a half-white/half-dark swatch, replace, delete, an on/off switch and a 32–64px
+  slider. Every control writes immediately.
+- **`WatermarkBadge`** overlays the uploaded PNG at the bottom-left of the product image on the shop
+  grid, category pages and the product page — `absolute bottom-2 left-2 z-10 pointer-events-none`,
+  proportional width, `max-height` from the slider, and
+  `filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3))`.
+- `?mark=off` on `/api/product-image`, plus a `brandMark` option on `productImageSrc`.
+
+**Why the new route parameter — the important part.** This project already baked the salon mark into
+every product image at bottom-left (`BRAND_MARK`, measured and tuned in v1.13–v1.16). Adding the
+overlay on top would have printed **two logos** on every card. So the surfaces named in the request
+now draw the badge in the DOM and request their image with `mark=off`, while every surface that has
+no overlay — `og:image` link previews, order confirmations, WhatsApp order messages, cart lines and
+the admin tables — keeps the baked mark. One logo in each place, never two, and no surface lost its
+branding.
+
+The card is deliberately **outside** the page's `SettingsForm`. That form is a single write path
+that patches every other field on save; folding the watermark in would let an unrelated Save later in
+the session revert a logo that had just been uploaded.
+
+Uploads reuse the public `gallery` bucket under a `brand/` prefix (`uploadBrandLogo`), rather than a
+new bucket or `uploadGalleryImage`, whose `category` parameter is a closed union of service
+categories that "brand" is not part of. Replacing or deleting a logo also removes the file it
+replaced, guarded so it only ever touches objects under our own `gallery/brand/` path.
+
+**Verified against the live project**
+- Migration applied; columns, defaults and the check constraint read back from the database.
+- With a real uploaded PNG at size 44: the overlay renders with `bottom-2 left-2 z-10
+  pointer-events-none`, the drop shadow, `max-height:44px`, `alt=""` and `aria-hidden="true"`, on
+  both the shop grid and a product page; all 88 product-image requests carried `mark=off`.
+- `og:image` on the same page does **not** carry `mark=off` — the baked mark is intact for shares.
+- Switch off → 0 overlays and 0 `mark=off`, so the baked mark returns and branding never disappears.
+- Slider at 64 → `max-height:64px`. A direct write of `watermark_size_px = 999` was rejected by the
+  database (`23514`).
+- `tsc --noEmit --incremental false` clean, `--noUnusedLocals` clean, `npm run build` clean.
+- Defaults restored afterwards and the verification object deleted; `gallery/brand/` is empty.
+
+**Boundaries, stated plainly.** (1) The `/well10` brand page keeps its baked mark and has no overlay
+— it is a brand presentation rather than the catalogue, and its cards already carry a
+"Representative photo" chip in the same bottom-left corner that the badge would collide with. (2) The
+uploaded logo drives the overlay only; the baked mark on shares and order views still uses the
+bundled `public/brand/abh-logo.png`, so uploading a *different* mark would show two different logos
+on different surfaces. Pointing the pipeline at `watermark_logo_url` is the fix and is a small
+follow-up. (3) The admin card is verified by build, by TypeScript and by exercising the exact
+Storage and settings writes it performs — not by clicking it in a browser, which is unavailable in
+this environment. (4) `npm run test:db` could not be executed here: local Postgres is not installed
+on this host.
+
+---
+
+## v1.20 — Owner's logo live, and low-stock alerting
+
+**The supplied PNG was not usable as-is, and that is the headline.** `270858.png` arrived as a
+1000×1000 PNG with **no alpha channel** — 99.1% of its pixels were solid black and the artwork
+occupied 0.9% of the frame. Dropped into the badge it would have painted a **black rectangle** into
+the bottom-left of every product photo, and the 76% empty border would have shrunk the visible mark
+to roughly a third of the configured height. It was converted to a real watermark before upload:
+alpha taken from the brightest channel (black → transparent, gold and pink preserved), then trimmed
+to the artwork with a 6px margin — 254×210, alpha range 0…254.
+
+**Delivered**
+- The cleaned logo uploaded through the same `gallery/brand/` path the admin card uses, and
+  `watermark_logo_url` / `watermark_enabled` / `watermark_size_px` (44) written to `salon_settings`.
+  Live on the shop: 9 badges, 88/88 product-image requests carrying `mark=off`.
+- **Low-stock alerting** for the admin console: `lib/stock-alerts.ts` (pure helpers and the WhatsApp
+  message builder), `getLowStockProducts()` in `lib/api-client.ts`, and `LowStockAlert` in the admin
+  toolbar — a count chip, a panel listing what needs restocking, a synthesised two-tone chime, and a
+  one-tap WhatsApp message to the owner.
+
+**Two things the request assumed that are not true, checked rather than assumed**
+1. **Payment statements are already saved.** `uploadPaymentProof` exists, `payment-proofs` is a
+   private bucket (images + PDF, 5 MB), `orders.payment_proof_url` holds the path, the admin orders
+   page renders it through a signed URL, and the order's WhatsApp message already says the
+   screenshot is in the dashboard. No new work was needed.
+2. **Nothing in this project sends WhatsApp messages by itself.** There is no Business API provider
+   anywhere in the dependency tree — every message is a `wa.me` link a human taps. So the stock
+   alert raises itself in the console and offers a pre-filled message; genuinely automatic sending
+   needs a provider and credentials, which is a decision, not a coding task.
+
+**Verified**
+- Live shop: 9 badges with the correct CSS (`absolute bottom-2 left-2 z-10 pointer-events-none`,
+  drop shadow, `max-height:44px`, `alt=""`), 88/88 requests with `mark=off`, asset returns
+  `200 image/png`.
+- Alert set read back from the live database: 3 of 9 products flagged (Luxury Spa 1 left, Hair Botox
+  1 left, No Yellow Purple 4 left); the six healthy lines stay quiet.
+- 14 unit assertions against `lib/stock-alerts.ts`: threshold boundary, zero-stock inclusion, sort
+  order and non-mutation, message wording and singular/plural, and the null cases for a missing
+  number and an empty list.
+- `tsc --noEmit --incremental false` clean, `--noUnusedLocals` clean, `npm run build` clean.
+
+**On the chime.** Browsers refuse to start audio before a user gesture, so the `AudioContext` is
+created suspended and resumed on the first interaction in the console, with the preference
+remembered per browser and a toggle in the panel. It sounds once per distinct set of shortages, not
+once per poll, so the 60-second refresh cannot turn into a metronome. This is verified by
+construction and unit test only — the actual sound cannot be heard in this environment.
+
+**Still outstanding from the same request:** per-bank-account names and QR codes with add/remove
+(today there is a single `payment_qr_image_url`), and multiple categorised announcements (today a
+single `announcement_text`).
