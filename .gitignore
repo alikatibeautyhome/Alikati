@@ -45,3 +45,4 @@ CONNECTION.secrets.md
 # supabase local stack
 /supabase/.branches
 /supabase/.temp
+.env*
