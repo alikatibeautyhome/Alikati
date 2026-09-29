@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Before image placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EDE6DE"/>
+      <stop offset="1" stop-color="#D8CFC6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#g)"/>
+  <circle cx="600" cy="380" r="140" fill="#6E6668" opacity="0.18"/>
+  <text x="600" y="660" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="72" fill="#6E6668">Before</text>
+  <text x="600" y="720" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="26" fill="#6E6668">Replace with the client's before photo</text>
+</svg>

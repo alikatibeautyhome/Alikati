@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Alikati Beauty Home salon interior placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FDF6F4"/>
+      <stop offset="0.5" stop-color="#F7E4E1"/>
+      <stop offset="1" stop-color="#E0AFA6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <circle cx="800" cy="420" r="220" fill="#B76E79" opacity="0.12"/>
+  <circle cx="800" cy="420" r="150" fill="#B76E79" opacity="0.16"/>
+  <text x="800" y="470" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="96" fill="#B76E79">Alikati Beauty Home</text>
+  <text x="800" y="540" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="32" fill="#6E6668">Salon · Bridal Studio · Academy — Attariya Chowk, Kailali</text>
+  <text x="800" y="600" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#6E6668">Replace this placeholder with a real salon photograph</text>
+</svg>

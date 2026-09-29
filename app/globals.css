@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Design tokens.
+
+   Brand hues are sampled from the two things that define how this shop should look: the
+   Alikati Beauty Home logo (rose + gold) and the owner's chosen storefront reference, whose
+   dominant colours are hot pink #ED4080 / deep magenta #C21F63 on near-white, with soft pink
+   section tints (#FFF2F5) and green prices.
+
+   Every colour is an RGB triple so Tailwind can apply opacity (`border-charcoal/10`,
+   `bg-white/80`). Light values live on :root, dark values on .dark — that single switch
+   re-themes the whole application.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand constants (identical in both themes) */
+  --rose-gold: #e23d7c;      /* primary — buttons, links, accents */
+  --rose-hot: #ed4080;       /* lighter pink for gradients and highlights */
+  --rose-deep: #c21f63;      /* hover / pressed, and gradient depth */
+  --gold: #c28a4c;           /* kept: the logo's crown and script are gold */
+  --price: #12874a;          /* prices, as in the reference design */
+  --sale: #e53935;           /* discount badges */
+  --success: #12874a;
+  --warn: #d97706;
+  --danger: #c0392b;
+
+  /* Light theme surfaces, text and tints */
+  --c-charcoal: 42 27 21;
+  --c-charcoal-light: 74 58 51;
+  --c-charcoal-soft: 107 90 82;
+  /* Near-white with a pink whisper, matching the reference's page background (#FDFBFC). */
+  --c-cream: 253 251 252;
+  --c-cream-100: 255 247 249;
+  --c-cream-200: 255 239 244;
+  --c-surface: 255 255 255;
+  /* Soft pink tints — the reference's category tiles are #FFF2F3. */
+  --c-blush: 255 242 245;
+  --c-blush-50: 255 250 251;
+  --c-blush-100: 255 242 245;
+  --c-blush-200: 255 227 236;
+  --c-blush-300: 255 201 219;
+  --c-blush-400: 255 157 192;
+  --c-rose-50: 255 242 247;
+  --c-rose-100: 255 227 236;
+  --c-rose-200: 255 201 219;
+  --c-rose-300: 255 157 192;
+  --c-gold-100: 251 241 225;
+}
+
+.dark {
+  /* Warm near-black rather than pure grey, so the rose and gold still feel at home. */
+  --c-charcoal: 244 238 241;
+  --c-charcoal-light: 216 205 210;
+  --c-charcoal-soft: 178 165 171;
+  /* Deep plum-black rather than warm brown, so the pink family stays coherent in the dark. */
+  --c-cream: 26 16 21;
+  --c-cream-100: 35 22 28;
+  --c-cream-200: 46 30 37;
+  --c-surface: 35 22 28;
+  --c-blush: 62 38 50;
+  --c-blush-50: 43 27 34;
+  --c-blush-100: 62 38 50;
+  --c-blush-200: 84 51 66;
+  --c-blush-300: 120 72 95;
+  --c-blush-400: 154 94 122;
+  --c-rose-50: 44 27 35;
+  --c-rose-100: 62 38 50;
+  --c-rose-200: 86 52 68;
+  --c-rose-300: 124 74 98;
+  --c-gold-100: 58 44 28;
+}
+
+@layer base {
+  * {
+    @apply border-charcoal/10;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    /* Prevents a white flash of the app background on iOS overscroll in dark mode. */
+    background-color: rgb(var(--c-cream));
+  }
+
+  body {
+    @apply bg-cream font-sans text-charcoal antialiased;
+  }
+
+  ::selection {
+    @apply bg-blush-300 text-charcoal;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--rose-gold);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+
+  /* ── Dark-mode bridges ──────────────────────────────────────────────────────
+     `bg-white` is Tailwind's own token and cannot be made variable-driven without also
+     breaking `text-white` on the rose and charcoal buttons. These three rules remap just the
+     surface utilities to the themed surface colour, which is what components actually use. */
+  .dark .bg-white {
+    background-color: rgb(var(--c-surface));
+  }
+  /* Every opacity variant actually used in the codebase. Add a line here if a new
+     `bg-white/<n>` appears and looks wrong in dark mode. */
+  .dark .bg-white\/60 {
+    background-color: rgb(var(--c-surface) / 0.6);
+  }
+  .dark .bg-white\/70 {
+    background-color: rgb(var(--c-surface) / 0.7);
+  }
+  .dark .bg-white\/80 {
+    background-color: rgb(var(--c-surface) / 0.8);
+  }
+  .dark .bg-white\/90 {
+    background-color: rgb(var(--c-surface) / 0.9);
+  }
+  .dark .bg-white\/95 {
+    background-color: rgb(var(--c-surface) / 0.95);
+  }
+
+  /* Dark-photo treatment: supplier product shots are on white backgrounds, which glare in
+     dark mode. A subtle filter keeps them comfortable without hiding the product. */
+  .dark .product-media img {
+    filter: brightness(0.92) contrast(1.02);
+  }
+}
+
+@layer components {
+  /* Section rhythm used across the public site. */
+  .section {
+    @apply py-14 sm:py-20;
+  }
+
+  /* Small uppercase label above a heading. */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-rose-gold;
+  }
+
+  /* Soft panel for highlighted content. */
+  .panel {
+    @apply rounded-2xl border border-charcoal/10 bg-white/80 shadow-soft;
+  }
+
+  /* Warm gradient used by the hero and CTA bands. */
+  .gradient-warm {
+    background-image: linear-gradient(135deg, #fffafb 0%, #fff2f5 45%, #ffe3ec 100%);
+  }
+
+  .gradient-rose {
+    background-image: linear-gradient(120deg, #ed4080 0%, #e23d7c 55%, #c21f63 100%);
+  }
+
+  /* Hero banner: the reference's magenta-to-pink sweep behind the headline. */
+  .gradient-hero {
+    background-image: linear-gradient(135deg, #b81a5c 0%, #e23d7c 42%, #ed4080 70%, #f76ba4 100%);
+  }
+
+  /* Promotional band (the reference's "Up to 30% OFF" strip). */
+  .gradient-sale {
+    background-image: linear-gradient(120deg, #e23d7c 0%, #d32f5e 60%, #b81a5c 100%);
+  }
+
+  /* Gold accent band — used sparingly for premium and offer emphasis. */
+  .gradient-gold {
+    background-image: linear-gradient(120deg, #f1c48e 0%, #c28a4c 55%, #a36834 100%);
+  }
+
+  .dark .gradient-hero {
+    background-image: linear-gradient(135deg, #7a1040 0%, #a8194f 42%, #b81a5c 70%, #c72263 100%);
+  }
+
+  .dark .gradient-sale {
+    background-image: linear-gradient(120deg, #8f0e52 0%, #a8194f 60%, #7a1040 100%);
+  }
+
+  .dark .gradient-warm {
+    background-image: linear-gradient(135deg, #241813 0%, #3a231f 45%, #4c2b33 100%);
+  }
+
+  /* Logo lockup: circular mask so the logo's white square corners never show. */
+  .logo-badge {
+    @apply shrink-0 overflow-hidden rounded-full ring-1 ring-gold/40;
+  }
+
+  .dark .logo-badge {
+    @apply ring-gold/30;
+  }
+}
+
+@layer utilities {
+  /* Hides the scrollbar on horizontal chip and carousel rows without disabling scrolling. */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Snap-scroll carousel used by the services rail. */
+  .snap-rail {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2;
+    scroll-padding-left: 1rem;
+  }
+  .snap-rail > * {
+    @apply snap-start;
+  }
+  .snap-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-rail {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Phones only: fades the clipped last item of a horizontal rail so it is obvious the row
+     continues off-screen. Without this, a chip or tile cut off at the right edge reads as a
+     layout bug rather than a scrollable row. Desktop shows every item, so the mask is phone-only. */
+  @media (max-width: 639px) {
+    .rail-hint {
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), transparent 100%);
+      mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), transparent 100%);
+    }
+  }
+
+  /* Respect the user's motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-up,
+    .animate-pulse-soft {
+      animation: none !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
