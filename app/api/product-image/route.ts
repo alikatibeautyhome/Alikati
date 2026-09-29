@@ -219,7 +219,23 @@ export async function GET(request: NextRequest) {
             .toBuffer()
         : await sharp(body).flatten({ background: '#ffffff' }).toBuffer();
 
-    const meta = await sharp(working).metadata();
+    /**
+     * Gentle colour optimisation, applied to the flattened white canvas.
+     *
+     * Supplier packshots arrive at inconsistent exposures — some washed out, some flat — and the
+     * storefront shows them side by side, where the differences read as sloppiness. A small
+     * saturation lift plus a touch of contrast evens them out. Both figures are deliberately
+     * modest: the brief is "crisp and true to life", and packaging colour is a claim customers
+     * compare against the physical product, so this corrects for a dull JPEG without inventing
+     * colours the product does not have. It is baked into the served bytes rather than applied as
+     * a CSS filter, so link previews and the admin console see the same thing the card does.
+     */
+    const tuned = await sharp(working)
+      .modulate({ saturation: 1.05 })
+      .linear(1.03, -4)
+      .toBuffer();
+
+    const meta = await sharp(tuned).metadata();
     const width = meta.width!;
     const height = meta.height!;
 
@@ -273,7 +289,9 @@ export async function GET(request: NextRequest) {
     const canvas = () =>
       sharp({
         create: { width, height, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
-      }).composite([{ input: working, top: 0, left: 0 }, ...layers]);
+        // `tuned`, not `working`: the colour pass above has already run, and the marks are sized
+        // against the same dimensions, so compositing on the tuned buffer keeps everything aligned.
+      }).composite([{ input: tuned, top: 0, left: 0 }, ...layers]);
 
     const output =
       format === 'png'

@@ -70,7 +70,28 @@ export function ProductCard({
   */
   const watermark = useWatermark();
   const badgeVisible = isWatermarkVisible(watermark);
-  const imageSrc = productImageSrc(product.image_url, PLACEHOLDER, { brandMark: !badgeVisible });
+
+  /*
+    The gallery. `images[0]` is the primary image; `image_url` is only a fallback for any row that
+    predates the gallery column. Rebuilt rather than trusted: a blank or repeated entry would
+    otherwise render as an empty card or two identical frames.
+  */
+  const gallery = React.useMemo(() => {
+    const list = (product.images?.length ? product.images : [product.image_url])
+      .map((url) => (url ?? '').trim())
+      .filter(Boolean);
+    return [...new Set(list)];
+  }, [product.images, product.image_url]);
+
+  /** Which gallery frame the visitor is looking at. Hover always reveals the *next* one. */
+  const [active, setActive] = React.useState(0);
+  const shown = gallery.length > 0 ? active % gallery.length : 0;
+
+  const baseImage = gallery[shown] ?? null;
+  const hoverImage = gallery.length > 1 ? gallery[(shown + 1) % gallery.length] : null;
+
+  const baseSrc = productImageSrc(baseImage, PLACEHOLDER, { brandMark: !badgeVisible });
+  const hoverSrc = productImageSrc(hoverImage, PLACEHOLDER, { brandMark: !badgeVisible });
 
   const ratingValue = typeof product.rating_average === 'number' ? product.rating_average : null;
   const ratingCount = typeof product.rating_count === 'number' ? product.rating_count : 0;
@@ -86,27 +107,65 @@ export function ProductCard({
   }
 
   return (
-    <Card className={cn('flex h-full flex-col overflow-hidden', className)}>
+    <Card
+      className={cn(
+        // `group` is what every hover rule below hangs off. The lift uses the project's own
+        // `shadow-lift` elevation token rather than a raw `shadow-xl`, so the resting and hover
+        // states are both drawn from the house shadow scale.
+        'group flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lift',
+        className
+      )}
+    >
       <Link
         href={`/shop/${product.slug}`}
-        className="product-media relative block aspect-[4/3] w-full overflow-hidden bg-[#ffffff]"
+        className="product-media relative block aspect-square w-full overflow-hidden bg-[#ffffff]"
       >
         {/*
-          White canvas + `object-contain`: the whole product is shown on white rather than
-          cropped. Every catalogue photo is a square white-background packshot (1080² or 1600²),
-          so a 4:3 frame with `object-cover` was cutting ~12.5% off the top and bottom of each
-          one — roughly 8% of the product itself, given the 4.6% margin the photos carry.
-          `contain` also fixes the handful of wide 327×150 images, which `cover` was slicing to a
-          narrow strip. `bg-[#ffffff]` rather than `bg-white` on purpose: the dark-mode bridge in
-          globals.css remaps `bg-white` to the dark surface, which would frame the white product
-          shots in a dark box in dark mode.
+          Square frame, `object-contain`: the whole product on a seamless white canvas, nothing
+          cropped. Every catalogue photo is a square packshot (1080² or 1600²), so a square frame
+          fits them exactly — and it gives the product more room than the 4:3 box this replaces.
+          The same frame also fixes the handful of wide 327×150 images, which a cropping fit was
+          slicing to a narrow strip. `bg-[#ffffff]` rather than `bg-white` on purpose: the dark-mode
+          bridge in globals.css remaps `bg-white` to the dark surface, which would frame the white
+          product shots in a dark box in dark mode.
         */}
-        <Image
-          src={imageSrc}
-          alt={product.name}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className="object-contain"
+        {/* Both layers live inside one scaling wrapper, so the zoom and the crossfade do not fight
+            each other and the frame never jumps as the images swap. */}
+        <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105">
+          <Image
+            src={baseSrc}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={cn(
+              'object-contain transition-opacity duration-500',
+              hoverImage ? 'group-hover:opacity-0' : ''
+            )}
+          />
+
+          {hoverImage ? (
+            <Image
+              src={hoverSrc}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="absolute inset-0 object-contain opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            />
+          ) : null}
+        </div>
+
+        {/*
+          A soft radial shadow where the product meets the canvas.
+
+          It has to sit *over* the photo, not behind it: every packshot is an opaque white square,
+          so a shadow painted underneath would simply be hidden by the image itself. Drawn as a
+          low, wide ellipse so it reads as the product resting on a surface rather than as a
+          vignette, and kept away from the top of the frame where the product's own label sits.
+        */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-[14%] bottom-[6%] h-[9%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(30,27,28,0.20),rgba(30,27,28,0)_72%)] blur-[6px]"
         />
         {discount !== null && (
           <span className="absolute left-2 top-2 rounded-full bg-sale px-2 py-0.5 text-[11px] font-semibold text-white shadow-soft sm:left-3 sm:top-3 sm:px-2.5 sm:text-xs">
@@ -117,6 +176,36 @@ export function ProductCard({
         {/* Brand badge, bottom-left over the product photo. Draws nothing at all when the admin
             has switched it off or has not uploaded a logo. */}
         <WatermarkBadge />
+
+        {/*
+          Quick-view dots: flick through the angles without leaving the grid, which is also the
+          only way to see them on a touch screen — there is no hover there.
+
+          Bottom-right rather than bottom-centre so they never collide with the brand badge on the
+          opposite corner, and inside the card's link, so each click has to stop the navigation
+          it would otherwise trigger.
+        */}
+        {gallery.length > 1 ? (
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/75 px-1.5 py-1 backdrop-blur-sm">
+            {gallery.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Show image ${index + 1} of ${gallery.length}`}
+                aria-current={index === shown}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setActive(index);
+                }}
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full transition-colors',
+                  index === shown ? 'bg-charcoal/75' : 'bg-charcoal/25 hover:bg-charcoal/50'
+                )}
+              />
+            ))}
+          </div>
+        ) : null}
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3 sm:p-4 lg:p-5">

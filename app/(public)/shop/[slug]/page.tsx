@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Truck } from 'lucide-react';
@@ -7,8 +6,8 @@ import { getRelatedProducts, getProductBySlug } from '@/lib/shop-api';
 import { getSalonSettings } from '@/lib/api';
 import { AddToCartPanel } from '@/components/shop/AddToCartPanel';
 import { ProductCard } from '@/components/shop/ProductCard';
-import { productImageSrc, productImageSrcAbsolute } from '@/lib/product-image';
-import { WatermarkBadge } from '@/components/shop/WatermarkBadge';
+import { ProductGallery } from '@/components/shop/ProductGallery';
+import { productImageSrcAbsolute } from '@/lib/product-image';
 import { isWatermarkVisible, watermarkConfigFromSettings } from '@/lib/watermark';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -73,7 +72,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     separately from `productImageSrcAbsolute` and keeps the baked mark — stays untouched.
   */
   const badgeVisible = isWatermarkVisible(watermarkConfigFromSettings(settings));
-  const imageSrc = productImageSrc(product.image_url, undefined, { brandMark: !badgeVisible });
+
+  /*
+    The gallery the page hands to the viewport component: the stored array, falling back to the
+    single `image_url` for any row that predates it, with blanks and repeats removed so the
+    thumbnail strip cannot show two identical frames.
+  */
+  const gallery = (() => {
+    const list = (product.images?.length ? product.images : [product.image_url])
+      .map((url) => (url ?? '').trim())
+      .filter(Boolean);
+    return [...new Set(list)];
+  })();
   const outOfStock = isOutOfStock(product);
   const lowStock = isLowStock(product);
 
@@ -98,28 +108,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          {/* Square frame, square photos: `contain` fits them exactly, so nothing is cropped and
-              the white canvas is the photo's own background. See ProductCard for why the colour
-              is a literal white rather than `bg-white`. */}
-          <div className="product-media relative aspect-square w-full overflow-hidden rounded-2xl border border-charcoal/10 bg-[#ffffff]">
-            <Image
-              src={imageSrc}
-              alt={product.name}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-              className="object-contain"
-            />
+          {/* The gallery: square frame, square photos, so `contain` fits them exactly and the white
+              canvas is the photo's own background. The discount flag and the brand badge are passed
+              in as overlays because they belong to this viewport rather than to the gallery itself. */}
+          <ProductGallery
+            images={gallery}
+            name={product.name}
+            brandMarkSuppressed={badgeVisible}
+          >
             {discount !== null && (
               <span className="absolute left-4 top-4 rounded-full bg-sale px-3 py-1 text-sm font-semibold text-white shadow-soft">
                 -{discount}%
               </span>
             )}
-
-            {/* Brand badge, bottom-left over the product photo. Draws nothing when switched off or
-                when no logo has been uploaded. */}
-            <WatermarkBadge />
-          </div>
+          </ProductGallery>
 
           <div className="space-y-5">
             <div className="space-y-2">

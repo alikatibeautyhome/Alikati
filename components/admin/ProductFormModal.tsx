@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Field } from '@/components/ui/label';
 import { getProductCategories, upsertProduct } from '@/lib/shop-admin-api';
-import { ProductImageUpload } from '@/components/admin/ProductImageUpload';
+import { ProductImagesUpload } from '@/components/admin/ProductImagesUpload';
 import type { Product, ProductCategory } from '@/types/commerce.types';
 
 const SHORT_DESCRIPTION_MAX = 240;
@@ -44,7 +44,8 @@ interface FormState {
   cost_price_npr: string;
   stock_qty: string;
   low_stock_threshold: string;
-  image_url: string;
+  /** Ordered gallery. Index 0 is the primary image, and is what `image_url` is written from. */
+  images: string[];
   variant_label: string;
   variant_options: string;
   tags: string;
@@ -70,7 +71,7 @@ function emptyForm(): FormState {
     cost_price_npr: '',
     stock_qty: '0',
     low_stock_threshold: '5',
-    image_url: '',
+    images: [],
     variant_label: '',
     variant_options: '',
     tags: '',
@@ -96,7 +97,14 @@ function formFromProduct(product: Product | null): FormState {
     cost_price_npr: product.cost_price_npr != null ? String(product.cost_price_npr) : '',
     stock_qty: String(product.stock_qty),
     low_stock_threshold: String(product.low_stock_threshold),
-    image_url: product.image_url ?? '',
+    // Prefer the gallery; fall back to the single image for any row that predates it, so an older
+    // product still opens with its photo in place rather than an empty uploader.
+    images:
+      product.images && product.images.length > 0
+        ? [...product.images]
+        : product.image_url
+          ? [product.image_url]
+          : [],
     variant_label: product.variant_label ?? '',
     variant_options: product.variant_options.join(', '),
     tags: product.tags.join(', '),
@@ -243,8 +251,10 @@ export function ProductFormModal({
         cost_price_npr: cost,
         stock_qty: stock,
         low_stock_threshold: lowThreshold,
-        image_url: form.image_url.trim() || null,
-        images: form.image_url.trim() ? [form.image_url.trim()] : [],
+        // The gallery leads: the first entry is the primary image, and `image_url` is derived from
+        // it so the two columns can never disagree.
+        image_url: form.images[0]?.trim() || null,
+        images: form.images,
         variant_label: form.variant_label.trim() || null,
         variant_options: splitList(form.variant_options),
         tags: splitList(form.tags),
@@ -530,8 +540,8 @@ export function ProductFormModal({
           </Field>
         </div>
 
-        {/* Upload, preview and the paste-a-URL fallback live together in one section. */}
-        <ProductImageUpload value={form.image_url} onChange={(url) => patch('image_url', url)} />
+        {/* The gallery: multi-file upload, ordering, primary selection and the paste-a-URL fallback. */}
+        <ProductImagesUpload images={form.images} onChange={(next) => patch('images', next)} />
 
         <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2 text-sm text-charcoal">

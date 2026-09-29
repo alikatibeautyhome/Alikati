@@ -931,3 +931,58 @@ construction and unit test only — the actual sound cannot be heard in this env
 **Still outstanding from the same request:** per-bank-account names and QR codes with add/remove
 (today there is a single `payment_qr_image_url`), and multiple categorised announcements (today a
 single `announcement_text`).
+
+---
+
+## v1.21 — Square white product cards, real galleries, hover reveal
+
+**Delivered**
+- **Card frames are square** (`aspect-square`, `object-contain`) instead of 4:3. Every catalogue
+  photo is a square packshot, so the frame now fits them exactly and the product is larger.
+- **A grounding shadow** at the base of each product, drawn as a wide low ellipse. It sits *over*
+  the photo, not behind it: packshots are opaque white squares, so a shadow underneath would simply
+  be hidden by the image. See the note in `ProductCard`.
+- **Hover reveal on the grid**: the image scales to 105% over 500ms, the frame crossfades to the
+  next angle, and the card lifts on the project's own `shadow-lift` token. The zoom and the fade
+  share one scaling wrapper so they cannot fight each other.
+- **Quick-view dots** (bottom-right, clear of the brand badge) to flick between angles in the grid —
+  also the only way to reach them on a touch screen, where there is no hover. Each dot sits inside
+  the card's link, so a click has to stop the navigation it would otherwise trigger.
+- **Multi-image gallery in the admin form** (`ProductImagesUpload` replacing the single-image
+  `ProductImageUpload`): drag-and-drop or select several files at once, thumbnails, make-primary,
+  reorder, delete, and the paste-a-URL path kept. Files upload in sequence with per-file progress
+  rather than in a burst, so a partial failure keeps what did upload and names what did not.
+- **Product page gallery** (`ProductGallery`): one viewport with zoom-on-hover, a thumbnail strip
+  below on phones and beside on desktop, prev/next controls, a frame counter, and swipe.
+- **Baked colour normalisation** in the image pipeline — `saturation: 1.05` and `linear(1.03, -4)`,
+  applied to the flattened white canvas. Supplier packshots arrive at inconsistent exposures and sit
+  side by side on the grid, where the difference reads as sloppiness. Kept deliberately modest: the
+  brief is "crisp and true to life", and packaging colour is a claim customers check against the
+  physical product.
+
+**The data model did not need a migration.** `products.images` is already `JSONB` typed as
+`string[]`, and `image_url` already existed. **The gallery is now the single source of truth**:
+`images[0]` *is* the primary image, and `image_url` is written from it on save. The form previously
+did the opposite — it derived `images` from the single `image_url` — so an uploaded gallery would
+have been silently discarded on save. A separate "primary" flag would have allowed the two columns
+to disagree; instead, promoting a photo moves it to the front.
+
+**Verified**
+- Live shop grid: 9 square frames, 9 zoom wrappers, 9 grounding shadows, and the `group`/lift
+  classes present. The crossfade layer and quick-view dots appear on **exactly one** card — the only
+  product with two images — and nowhere else, which is the correct behaviour for single-photo rows.
+- Product page: 2 thumbnails, correct `aria-current`, 2 prev/next controls, and a `1 / 2` counter.
+- A **genuine second angle** was added to the Luxury Spa tub from the supplier's own product page
+  (lid open, cream texture) — real photography, not filler. With one image per product the reveal
+  and the dots can never render, so the feature was otherwise untestable.
+- Colour pass measured on the same source: mean RGB `228.1 / 217.2 / 214.6` → `229.1 / 217.9 /
+  214.9`, and read back side by side. A gentle, natural shift rather than a correction.
+- `tsc --noEmit --incremental false` clean, `--noUnusedLocals` clean, `npm run build` clean.
+- `npm run test:db` not re-run: this release contains no SQL.
+
+**Boundaries, stated plainly.** (1) Eight of the nine products still have a single photograph, so
+the hover reveal and dots stay dormant for them until more are uploaded — the behaviour is verified,
+the content is not yet there. (2) The grounding shadow is a CSS overlay, so it appears on the grid
+and product page but not in link previews or order confirmations, which use the raw image. (3) Swipe
+and hover cannot be exercised in this environment; they are verified by markup and unit-level
+reasoning, not by gesture.
