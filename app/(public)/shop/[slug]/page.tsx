@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Truck } from 'lucide-react';
-import { getRelatedProducts, getProductBySlug } from '@/lib/shop-api';
+import { getRelatedProducts, getProductBySlug, getProductVariants } from '@/lib/shop-api';
 import { getSalonSettings } from '@/lib/api';
 import { AddToCartPanel } from '@/components/shop/AddToCartPanel';
 import { ProductCard } from '@/components/shop/ProductCard';
@@ -18,6 +18,7 @@ import {
   stockLabel,
 } from '@/lib/commerce';
 import { cn, formatNPR } from '@/lib/utils';
+import type { Product } from '@/types/commerce.types';
 
 export const revalidate = 300;
 
@@ -59,9 +60,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product || product.is_active === false) notFound();
 
-  const [settings, related] = await Promise.all([
+  // Sibling sizes/strengths live in their own rows; the picker links to them so each keeps its own
+  // price and stock. Fetched in parallel — a standalone product resolves to an empty list.
+  const [settings, related, variants] = await Promise.all([
     getSalonSettings(),
     getRelatedProducts(product, 4),
+    product.variant_group
+      ? getProductVariants(product.variant_group)
+      : Promise.resolve<Product[]>([]),
   ]);
 
   const discount = productDiscountPercent(product);
@@ -179,7 +185,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            <AddToCartPanel product={product} whatsappNumber={settings.whatsapp_number} />
+            <AddToCartPanel
+              product={product}
+              whatsappNumber={settings.whatsapp_number}
+              variants={variants}
+            />
 
             {settings.delivery_note && (
               <div className="flex items-start gap-3 rounded-2xl bg-blush-50 p-4 text-sm text-charcoal-soft">

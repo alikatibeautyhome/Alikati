@@ -120,6 +120,12 @@ function makeProduct(s: ProductSeed): Product {
     images: [s.image],
     variant_label: s.variantLabel ?? null,
     variant_options: s.options ?? [],
+    // Facets mirror the live columns (migrations 0025/0026). The hand-written demo shelf is all
+    // retail and carries no concern labels — the same empty state those columns legitimately allow.
+    variant_group: null,
+    variant_value: null,
+    concerns: [],
+    use_type: 'retail',
     tags: s.tags ?? [],
     is_active: s.active ?? true,
     is_featured: s.featured ?? false,
@@ -451,6 +457,10 @@ function mergeImportedCatalog() {
       images: seed.images ?? [],
       variant_label: seed.variant_label ?? null,
       variant_options: seed.variant_options ?? [],
+      variant_group: null,
+      variant_value: null,
+      concerns: [],
+      use_type: 'retail',
       tags: [...(seed.tags ?? []), seed.source.replace('.com', '')].slice(0, 8),
       is_active: true,
       is_featured: index % 9 === 0,
@@ -566,6 +576,17 @@ export const demoCommerceDb = {
     return found ? decorate(found) : null;
   },
 
+  /** Sibling sizes/strengths of one product, mirroring `getProductVariants` in shop-api. */
+  getProductVariants: (group: string): Product[] =>
+    demoCommerceStore.products
+      .filter((p) => p.is_active && p.variant_group === group)
+      .sort((a, b) =>
+        (a.variant_value ?? a.name).localeCompare(b.variant_value ?? b.name, undefined, {
+          numeric: true,
+        })
+      )
+      .map(decorate),
+
   getRelatedProducts: (product: Product, limit = 4): Product[] =>
     demoCommerceStore.products
       .filter((p) => p.is_active && p.category_id === product.category_id && p.id !== product.id)
@@ -599,6 +620,10 @@ export const demoCommerceDb = {
       images: input.images ?? [],
       variant_label: input.variant_label ?? null,
       variant_options: input.variant_options ?? [],
+      variant_group: input.variant_group ?? null,
+      variant_value: input.variant_value ?? null,
+      concerns: input.concerns ?? [],
+      use_type: input.use_type ?? 'retail',
       tags: input.tags ?? [],
       is_active: input.is_active ?? true,
       is_featured: input.is_featured ?? false,

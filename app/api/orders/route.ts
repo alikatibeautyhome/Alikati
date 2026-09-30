@@ -116,6 +116,11 @@ export async function POST(request: NextRequest) {
   const delivery_address = String(body.delivery_address ?? '').trim();
   const delivery_city = String(body.delivery_city ?? '').trim();
   const delivery_landmark = String(body.delivery_landmark ?? '').trim();
+  // The three parts a Nepali address is composed of. `delivery_district` also decides the courier
+  // fee, which `place_order()` computes — see migration 0024.
+  const delivery_district = String(body.delivery_district ?? '').trim().slice(0, 60);
+  const delivery_municipality = String(body.delivery_municipality ?? '').trim().slice(0, 80);
+  const delivery_ward = String(body.delivery_ward ?? '').trim().slice(0, 20);
   const notes = String(body.notes ?? '').trim();
   const payment_method = String(body.payment_method ?? 'cod') as PaymentMethod;
   // Optional account link. Guests simply omit it; it is validated below and re-checked in live mode.
@@ -154,6 +159,16 @@ export async function POST(request: NextRequest) {
   if (delivery_city.length < 2 || delivery_city.length > 80) {
     fields.delivery_city = 'Choose or enter your delivery area.';
   }
+  if (delivery_district.length < 2) {
+    fields.delivery_district = 'Choose your district.';
+  }
+  if (delivery_municipality.length < 2 || delivery_municipality.length > 80) {
+    fields.delivery_municipality = 'Enter your municipality or rural municipality.';
+  }
+  // Wards run 1–32 in Nepal; anything outside that is a typo rather than a place.
+  if (!/^\d{1,2}$/.test(delivery_ward) || Number(delivery_ward) < 1 || Number(delivery_ward) > 32) {
+    fields.delivery_ward = 'Enter the ward number (1–32).';
+  }
   if (!['cod', 'bank_transfer', 'esewa', 'khalti'].includes(payment_method)) {
     fields.payment_method = 'Choose a payment method.';
   }
@@ -189,6 +204,9 @@ export async function POST(request: NextRequest) {
     customer_email: customer_email || null,
     delivery_address,
     delivery_city,
+    delivery_district,
+    delivery_municipality,
+    delivery_ward,
     delivery_landmark: delivery_landmark || null,
     notes: notes || null,
     payment_method,

@@ -2,7 +2,7 @@
  * Commerce helpers shared by the storefront and the admin console.
  * Pure functions and constant maps only — safe to import from server or client code.
  */
-import type { CartLine, CartTotals, CustomerSummary, Order, OrderStatus, PaymentMethod, PaymentStatus, Product, ShopKpis } from '@/types/commerce.types';
+import type { CartLine, CartTotals, CustomerSummary, Order, OrderStatus, PaymentMethod, PaymentStatus, Product, ProductUseType, ShopKpis } from '@/types/commerce.types';
 import type { SalonSettings } from '@/types/database.types';
 
 /* ------------------------------------------------------------------- labels */
@@ -68,6 +68,75 @@ export const DELIVERY_CITIES = [
   'Other (Kailali)',
   'Other (Nepal)',
 ] as const;
+
+/**
+ * Districts offered at checkout, Kailali first because that is the shop's own and the default.
+ *
+ * Far-western Nepal is the trade area, so Sudurpashchim leads; the rest of the country follows for
+ * the customers who order from Kathmandu or Pokhara.
+ */
+export const NEPAL_DISTRICTS = [
+  'Kailali',
+  'Kanchanpur',
+  'Doti',
+  'Dadeldhura',
+  'Baitadi',
+  'Darchula',
+  'Bajhang',
+  'Bajura',
+  'Achham',
+  'Kathmandu',
+  'Lalitpur',
+  'Bhaktapur',
+  'Pokhara (Kaski)',
+  'Chitwan',
+  'Banke',
+  'Bardiya',
+  'Other district',
+] as const;
+
+/** The town we deliver in ourselves, and therefore the one that costs nothing. */
+export const FREE_DELIVERY_CITY = 'Attariya';
+
+/**
+ * Readable labels for the `use_type` facet, in tab order.
+ *
+ * A closed union — matching the CHECK constraint — so this is a label map rather than a list that
+ * could drift from the catalogue. The brand and concern lists are derived from the products
+ * themselves and are deliberately NOT written down here.
+ */
+export const PRODUCT_USE_TYPE_LABELS: Record<ProductUseType, string> = {
+  retail: 'Retail Skincare & Makeup',
+  professional: 'Professional Salon Supplies',
+};
+
+/**
+ * Delivery fee for a destination — the client-side mirror of `public.delivery_fee_for()`.
+ *
+ * The SQL function is the authority: the fee an order is actually charged is computed there, by
+ * `place_order()`, and this only exists so the checkout can show the customer the right number
+ * before the order exists. **If the rule changes, both must change together** — they are two
+ * implementations of one decision, and nothing enforces that they agree.
+ *
+ * Kept deliberately in step with migration 0024:
+ *   Attariya                     → 0
+ *   anywhere else in Kailali     → 100 flat
+ *   outside Kailali              → the configured fee, waived above the free-delivery threshold
+ */
+export const KAILALI_FLAT_DELIVERY_NPR = 100;
+
+export function deliveryFeeFor(opts: {
+  district: string;
+  city: string;
+  subtotal: number;
+  feeNpr: number;
+  freeThresholdNpr: number;
+}): number {
+  if (opts.city.trim() === FREE_DELIVERY_CITY) return 0;
+  if (opts.district.trim() === 'Kailali') return KAILALI_FLAT_DELIVERY_NPR;
+  if (opts.freeThresholdNpr > 0 && opts.subtotal >= opts.freeThresholdNpr) return 0;
+  return opts.feeNpr;
+}
 
 /* -------------------------------------------------------------- identifiers */
 

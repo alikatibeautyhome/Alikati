@@ -5,6 +5,7 @@ import { ShoppingBag, Truck } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CartLines } from '@/components/shop/CartLines';
+import { WhatsAppOrderButton } from '@/components/shop/WhatsAppOrderButton';
 import { useCart } from '@/components/shop/CartProvider';
 import { formatNPR } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ import { formatNPR } from '@/lib/utils';
  * no-index directive is applied on the checkout and order pages, which are server components.
  */
 export default function CartPage() {
-  const { lines, totals, hydrated } = useCart();
+  const { lines, totals, hydrated, whatsappNumber } = useCart();
 
   if (!hydrated) {
     return (
@@ -90,6 +91,20 @@ export default function CartPage() {
               <Link href="/checkout" className={buttonVariants({ size: 'lg', className: 'w-full' })}>
                 Proceed to checkout
               </Link>
+
+              {/* The no-registration path: the whole cart written out in a chat, no form to fill. */}
+              <WhatsAppOrderButton
+                items={lines.map((line) => ({
+                  name: line.name,
+                  variant: line.variant,
+                  quantity: line.quantity,
+                  line_total_npr: line.unit_price_npr * line.quantity,
+                }))}
+                totalNpr={totals.total}
+                whatsappNumber={whatsappNumber}
+                hint="No account needed — we confirm stock and delivery in chat."
+                className="w-full"
+              />
 
               <Link
                 href="/shop"

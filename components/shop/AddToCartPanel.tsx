@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Check, MessageCircle, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { Check, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/components/shop/CartProvider';
 import { MAX_QTY_PER_LINE } from '@/lib/cart';
 import { isLowStock, isOutOfStock, productPrice, stockLabel } from '@/lib/commerce';
-import { createGeneralContactLink } from '@/lib/whatsapp';
+import { WhatsAppOrderButton } from '@/components/shop/WhatsAppOrderButton';
 import { cn, formatNPR } from '@/lib/utils';
 import type { Product } from '@/types/commerce.types';
 
@@ -20,9 +20,16 @@ import type { Product } from '@/types/commerce.types';
 export function AddToCartPanel({
   product,
   whatsappNumber,
+  variants = [],
 }: {
   product: Product;
   whatsappNumber: string;
+  /**
+   * Sibling sizes/strengths of this product (same `variant_group`), including this row. They are
+   * separate rows with their own price and stock, so picking one navigates to it rather than
+   * re-computing a price here — the sibling's own row stays authoritative for both.
+   */
+  variants?: Product[];
 }) {
   const { addProduct } = useCart();
 
@@ -72,12 +79,8 @@ export function AddToCartPanel({
     timer.current = setTimeout(() => setAdded(false), 2200);
   }
 
-  const whatsappHref = createGeneralContactLink({
-    business_whatsapp: whatsappNumber,
-    context: `I would like to order "${product.name}"${
-      variant ? ` in ${variant}` : ''
-    } from your shop. Is it available?`,
-  });
+  /** Total for the quantity currently on screen — what the WhatsApp message quotes. */
+  const selectedTotal = productPrice(product) * quantity;
 
   return (
     <>
@@ -91,6 +94,38 @@ export function AddToCartPanel({
         >
           {stockLabel(product)}
         </p>
+
+        {/* Sibling picker. Each option is a link to the sibling's own page, so choosing 60 gm
+            swaps the name, price, image and stock from that row — nothing is derived here. */}
+        {variants.length > 1 && (
+          <fieldset className="space-y-1.5">
+            <legend className="text-sm font-medium text-charcoal">Options</legend>
+            <div className="flex flex-wrap gap-2">
+              {variants.map((sibling) => {
+                const label = sibling.variant_value ?? sibling.name;
+                const current = sibling.id === product.id;
+
+                return current ? (
+                  <span
+                    key={sibling.id}
+                    aria-current="true"
+                    className="inline-flex min-h-11 items-center rounded-full border border-rose-gold bg-rose-gold px-4 text-sm font-medium text-white"
+                  >
+                    {label}
+                  </span>
+                ) : (
+                  <Link
+                    key={sibling.id}
+                    href={`/shop/${sibling.slug}`}
+                    className="inline-flex min-h-11 items-center rounded-full border border-charcoal/15 bg-white px-4 text-sm font-medium text-charcoal-soft transition-colors hover:border-rose-gold/40 hover:text-charcoal"
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
 
         {hasVariants && product.variant_label && (
           <div className="space-y-1.5">
@@ -184,15 +219,22 @@ export function AddToCartPanel({
             )}
           </div>
 
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonVariants({ variant: 'secondary', size: 'lg' })}
-          >
-            <MessageCircle className="h-5 w-5" aria-hidden="true" />
-            Order on WhatsApp
-          </a>
+          {/* Carries the product and the quantity on screen, so the chat opens with a real order
+              rather than a question. Replaces the older "is it available?" enquiry link. */}
+          <WhatsAppOrderButton
+            items={[
+              {
+                name: product.name,
+                variant,
+                quantity,
+                line_total_npr: selectedTotal,
+              },
+            ]}
+            totalNpr={selectedTotal}
+            whatsappNumber={whatsappNumber}
+            label="Order via WhatsApp"
+            hint="No account needed — we confirm stock in chat."
+          />
 
           <span className="sr-only" aria-live="polite">
             {added ? `${product.name} added to cart` : ''}

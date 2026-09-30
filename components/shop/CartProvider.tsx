@@ -15,13 +15,22 @@ import {
 } from '@/lib/cart';
 import { cartTotals } from '@/lib/commerce';
 
-type StoreSettings = Pick<SalonSettings, 'shipping_fee_npr' | 'free_shipping_threshold_npr'>;
+type StoreSettings = Pick<
+  SalonSettings,
+  'shipping_fee_npr' | 'free_shipping_threshold_npr' | 'whatsapp_number'
+>;
 
 interface CartContextValue {
   lines: CartLine[];
   totals: CartTotals;
   /** False until localStorage has been read, so the badge does not flash 0 → n. */
   hydrated: boolean;
+  /**
+   * The shop's WhatsApp number, so the cart can build an "Order via WhatsApp" link without
+   * another fetch. Carried here because the cart is a client component and this is the settings
+   * row it already has.
+   */
+  whatsappNumber: string;
   addProduct: (product: Product, quantity?: number, variant?: string | null) => void;
   setQuantity: (key: string, quantity: number) => void;
   remove: (key: string) => void;
@@ -68,6 +77,7 @@ export function CartProvider({
     lines,
     totals: cartTotals(lines, settings),
     hydrated,
+    whatsappNumber: settings.whatsapp_number,
     addProduct,
     setQuantity: (key, quantity) => setLines((current) => setLineQuantity(current, key, quantity)),
     remove: (key) => setLines((current) => removeLine(current, key)),

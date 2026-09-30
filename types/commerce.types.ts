@@ -62,6 +62,12 @@ export interface PaymentAccount {
   updated_at: string;
 }
 
+/**
+ * Which shelf a product sits on. Mirrors the `products.use_type` CHECK constraint (migration 0025):
+ * `retail` is a walk-in purchase, `professional` is salon backbar / trade supply.
+ */
+export type ProductUseType = 'retail' | 'professional';
+
 export interface Product {
   id: string;
   name: string;
@@ -81,6 +87,25 @@ export interface Product {
   /** Display-only variant metadata in v1, e.g. "Shade" with ["Rosewood", "Coral"]. */
   variant_label: string | null;
   variant_options: string[];
+  /**
+   * Sibling key linking sizes or strengths of one product (migration 0025). Rows that share it are
+   * the same product in different options; `null` when the product stands alone. Kept as separate
+   * rows on purpose, so each sibling keeps its own price and stock.
+   */
+  variant_group: string | null;
+  /** This row's option inside its group, e.g. "100 gm" or "12%". `null` when there is no group. */
+  variant_value: string | null;
+  /**
+   * The facets this product answers, from the five labels the shop filters by, e.g.
+   * ["Acne & Blemish", "Whitening & Glow"]. Legitimately empty for hair care that answers none of
+   * them (migration 0026) — such a product still shows whenever no concern filter is active.
+   */
+  concerns: string[];
+  /**
+   * Retail vs salon backbar. NOT NULL with a default of 'retail' in the database, so it is always
+   * present; drives the shop's use-type tabs.
+   */
+  use_type: ProductUseType;
   tags: string[];
   is_active: boolean;
   is_featured: boolean;

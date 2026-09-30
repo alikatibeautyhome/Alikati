@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getProductCategories, getProducts } from '@/lib/shop-api';
 import { ShopCatalog } from '@/components/shop/ShopCatalog';
-import type { ProductQuery } from '@/types/commerce.types';
+import type { ProductQuery, ProductUseType } from '@/types/commerce.types';
 
 export const revalidate = 60;
 
@@ -20,6 +20,16 @@ const SORT_KEYS: readonly SortKey[] = ['newest', 'price-asc', 'price-desc', 'nam
 function first(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
+}
+
+/** Reads a comma-joined multi-select param (`brand`, `concern`) into a clean list. */
+function list(value: string | string[] | undefined): string[] {
+  const raw = first(value);
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 export default async function ShopPage({
@@ -44,9 +54,18 @@ export default async function ShopPage({
   const featuredOnly = first(params.featured) === '1';
   const inStockOnly = first(params.stock) === '1';
 
+  const rawUse = first(params.use);
+  const useType: ProductUseType | undefined =
+    rawUse === 'retail' || rawUse === 'professional' ? rawUse : undefined;
+
+  /*
+    The free-text search and the brand/concern facets are applied in the browser (ShopCatalog), over
+    the whole active catalogue. Searching on the server would drop a row before the browser could
+    match it by its concern or its variant value — a `text[]` column cannot be asked for a substring.
+    With a shop this size the extra rows are cheaper than a facet that only half works.
+  */
   const products = await getProducts({
     categorySlug: category,
-    search: query,
     sort,
     featuredOnly: featuredOnly || undefined,
     inStockOnly: inStockOnly || undefined,
@@ -79,6 +98,9 @@ export default async function ShopPage({
             initialSort={sort}
             initialFeatured={featuredOnly}
             initialStockOnly={inStockOnly}
+            initialBrands={list(params.brand)}
+            initialUseType={useType ?? 'all'}
+            initialConcerns={list(params.concern)}
           />
         </div>
       </section>

@@ -39,10 +39,18 @@ const PLACEHOLDER = '/media/placeholder-product.svg';
 export function ProductCard({
   product,
   onAdd,
+  variantHints,
   className,
 }: {
   product: Product;
   onAdd?: (product: Product) => void;
+  /**
+   * The product's sibling options (same `variant_group`), supplied by callers that already hold
+   * them — the catalogue grid does, from the products it has loaded. Kept optional so the card
+   * stays cheap everywhere else (related products, the landing strip), where siblings are unknown
+   * and the hint would be a lie by omission.
+   */
+  variantHints?: { value: string; slug: string }[];
   className?: string;
 }) {
   const { addProduct } = useCart();
@@ -228,6 +236,24 @@ export function ProductCard({
         {product.short_description && (
           <p className="line-clamp-2 break-words text-xs text-charcoal-soft sm:text-sm">
             {product.short_description}
+          </p>
+        )}
+
+        {/* Sibling sizes/strengths, as one quiet line. A shopper who wanted the 60 gm pack should
+            not have to hunt for it, but it must not compete with the price either. */}
+        {variantHints && variantHints.length > 0 && (
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-charcoal-soft">
+            <span>Also in</span>
+            {variantHints.map((hint) => (
+              <Link
+                key={hint.slug}
+                href={`/shop/${hint.slug}`}
+                className="rounded underline decoration-dotted underline-offset-2 hover:text-rose-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-gold/40"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {hint.value}
+              </Link>
+            ))}
           </p>
         )}
 

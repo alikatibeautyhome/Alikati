@@ -28,7 +28,12 @@ import { PaymentQR } from '@/components/shop/PaymentQR';
 import { PaymentAccountTabs } from '@/components/shop/PaymentAccountTabs';
 import { useAuth } from '@/components/account/AuthProvider';
 import { toOrderItems } from '@/lib/cart';
-import { DELIVERY_CITIES, PAYMENT_METHOD_LABELS } from '@/lib/commerce';
+import {
+  DELIVERY_CITIES,
+  NEPAL_DISTRICTS,
+  PAYMENT_METHOD_LABELS,
+  deliveryFeeFor,
+} from '@/lib/commerce';
 import { getStoredReferralCode, validateCoupon } from '@/lib/marketing-api';
 import { uploadPaymentProof } from '@/lib/shop-admin-api';
 import { createCheckoutFallbackLink } from '@/lib/whatsapp';
@@ -61,6 +66,9 @@ const FIELD_INPUT_IDS: Record<string, string> = {
   customer_email: 'checkout-email',
   delivery_address: 'checkout-address',
   delivery_city: 'checkout-city',
+  delivery_district: 'checkout-district',
+  delivery_municipality: 'checkout-municipality',
+  delivery_ward: 'checkout-ward',
 };
 
 /** Server field keys with no dedicated input; their messages are surfaced in the error banner. */
@@ -122,6 +130,10 @@ export function CheckoutForm({
   const [customerEmail, setCustomerEmail] = React.useState('');
   const [deliveryAddress, setDeliveryAddress] = React.useState('');
   const [deliveryCity, setDeliveryCity] = React.useState<string>(DELIVERY_CITIES[0]);
+  // Kailali first and defaulted: it is the shop's own district and where most orders go.
+  const [deliveryDistrict, setDeliveryDistrict] = React.useState<string>(NEPAL_DISTRICTS[0]);
+  const [deliveryMunicipality, setDeliveryMunicipality] = React.useState('');
+  const [deliveryWard, setDeliveryWard] = React.useState('');
   const [deliveryLandmark, setDeliveryLandmark] = React.useState('');
   const [notes, setNotes] = React.useState('');
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>(
@@ -157,7 +169,36 @@ export function CheckoutForm({
 
   const appliedCode = coupon && coupon.valid ? coupon.code : null;
   const discountNpr = coupon && coupon.valid ? Math.min(coupon.discount_npr, totals.subtotal) : 0;
-  const payableTotal = Math.max(0, totals.total - discountNpr);
+
+  /**
+   * Delivery for the destination chosen right now.
+   *
+   * Deliberately not `totals.shipping`: the cart's figure is a flat fee from settings and knows
+   * nothing about where the order is going. This mirrors the rule `place_order()` charges by, so
+   * the number the customer reads — and the amount the QR asks them to transfer — is the number
+   * the order is written with. Attariya is free, the rest of Kailali is flat, outside Kailali keeps
+   * the configured fee. See migration 0024.
+   */
+  const shippingNpr = deliveryFeeFor({
+    district: deliveryDistrict,
+    city: deliveryCity,
+    subtotal: totals.subtotal,
+    feeNpr: Number(settings.shipping_fee_npr ?? 0),
+    freeThresholdNpr: Number(settings.free_shipping_threshold_npr ?? 0),
+  });
+
+  /** Goods + delivery − coupon. What the customer actually pays. */
+  const orderTotal = totals.subtotal + shippingNpr;
+  const payableTotal = Math.max(0, orderTotal - discountNpr);
+
+  /**
+   * Whether the free-delivery nudge is worth showing. It only applies outside Kailali, because
+   * inside Kailali the fee is flat and a threshold would be misleading.
+   */
+  const freeShippingRemaining =
+    deliveryDistrict !== 'Kailali' && deliveryCity !== 'Attariya'
+      ? Math.max(0, Number(settings.free_shipping_threshold_npr ?? 0) - totals.subtotal)
+      : 0;
 
   /**
    * WhatsApp fallback, rebuilt from the live form + cart so a failed checkout can still become a
@@ -180,7 +221,7 @@ export function CheckoutForm({
           line_total_npr: line.unit_price_npr * line.quantity,
         })),
         subtotal_npr: totals.subtotal,
-        shipping_npr: totals.shipping,
+        shipping_npr: shippingNpr,
         discount_npr: discountNpr,
         coupon_code: appliedCode,
         payment_reference: isDigitalPayment ? paymentReference.trim() || null : null,
@@ -195,7 +236,7 @@ export function CheckoutForm({
       deliveryCity,
       lines,
       totals.subtotal,
-      totals.shipping,
+      shippingNpr,
       discountNpr,
       appliedCode,
       isDigitalPayment,
@@ -313,10 +354,24 @@ export function CheckoutForm({
       errors.customer_phone = FAILURE_MESSAGES.phone;
     }
     if (deliveryAddress.trim().length < 5) {
-      errors.delivery_address = 'Please enter the full delivery address (ward, street, landmark).';
+      errors.delivery_address = 'Please enter the street, tole and house number.';
     }
     if (!deliveryCity) {
       errors.delivery_city = 'Choose your delivery area.';
+    }
+    if (!deliveryDistrict) {
+      errors.delivery_district = 'Choose your district.';
+    }
+    if (deliveryMunicipality.trim().length < 2) {
+      errors.delivery_municipality = 'Enter your municipality or rural municipality.';
+    }
+    // Wards run 1–32 in Nepal; anything else is a typo rather than a place.
+    if (
+      !/^\d{1,2}$/.test(deliveryWard.trim()) ||
+      Number(deliveryWard) < 1 ||
+      Number(deliveryWard) > 32
+    ) {
+      errors.delivery_ward = 'Enter the ward number (1–32).';
     }
     if (customerEmail.trim() && !EMAIL_PATTERN.test(customerEmail.trim())) {
       errors.customer_email = 'Enter a valid email address, or leave it blank.';
@@ -403,6 +458,9 @@ export function CheckoutForm({
           customer_email: customerEmail.trim(),
           delivery_address: deliveryAddress.trim(),
           delivery_city: deliveryCity,
+          delivery_district: deliveryDistrict,
+          delivery_municipality: deliveryMunicipality.trim(),
+          delivery_ward: deliveryWard.trim(),
           delivery_landmark: deliveryLandmark.trim(),
           notes: notes.trim(),
           payment_method: paymentMethod,
@@ -448,8 +506,8 @@ export function CheckoutForm({
           subtotal_npr: data.subtotal_npr ?? totals.subtotal,
           discount_npr: serverDiscount,
           coupon_code: data.coupon_code ?? appliedCode,
-          shipping_npr: data.shipping_npr ?? totals.shipping,
-          total_npr: data.total_npr ?? Math.max(0, totals.total - serverDiscount),
+          shipping_npr: data.shipping_npr ?? shippingNpr,
+          total_npr: data.total_npr ?? Math.max(0, orderTotal - serverDiscount),
           whatsapp_url: data.whatsapp_url ?? null,
           // `product_id` lets the confirmation screen pair each line with its thumbnail.
           items: lines.map((line) => ({
@@ -703,8 +761,9 @@ export function CheckoutForm({
           </Field>
 
           <Field
-            label="Delivery address"
+            label="Street address"
             htmlFor="checkout-address"
+            hint="House number, tole or street."
             error={fieldErrors.delivery_address}
           >
             <Textarea
@@ -712,13 +771,36 @@ export function CheckoutForm({
               value={deliveryAddress}
               onChange={(event) => setDeliveryAddress(event.target.value)}
               autoComplete="street-address"
-              placeholder="Ward, street or tole, house colour…"
+              placeholder="e.g. House 12, Shanti Tole"
               aria-invalid={Boolean(fieldErrors.delivery_address)}
               required
             />
           </Field>
 
+          {/* District, municipality and ward are how a Nepali address is actually composed, and
+              the district decides the courier fee — so they are asked for properly rather than
+              folded into one free-text box. */}
           <div className="grid gap-5 sm:grid-cols-2">
+            <Field
+              label="District"
+              htmlFor="checkout-district"
+              hint="Kailali is our own district."
+              error={fieldErrors.delivery_district}
+            >
+              <Select
+                id="checkout-district"
+                value={deliveryDistrict}
+                onChange={(event) => setDeliveryDistrict(event.target.value)}
+                required
+              >
+                {NEPAL_DISTRICTS.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
             <Field label="Delivery area" htmlFor="checkout-city" error={fieldErrors.delivery_city}>
               <Select
                 id="checkout-city"
@@ -733,16 +815,52 @@ export function CheckoutForm({
                 ))}
               </Select>
             </Field>
+          </div>
 
-            <Field label="Landmark (optional)" htmlFor="checkout-landmark">
+          <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
+            <Field
+              label="Municipality / Rural municipality"
+              htmlFor="checkout-municipality"
+              hint="e.g. Godawari, Dhangadhi"
+              error={fieldErrors.delivery_municipality}
+            >
               <Input
-                id="checkout-landmark"
-                value={deliveryLandmark}
-                onChange={(event) => setDeliveryLandmark(event.target.value)}
-                placeholder="e.g. near Attariya Chowk"
+                id="checkout-municipality"
+                value={deliveryMunicipality}
+                onChange={(event) => setDeliveryMunicipality(event.target.value)}
+                placeholder="e.g. Godawari"
+                autoComplete="address-level2"
+                aria-invalid={Boolean(fieldErrors.delivery_municipality)}
+                required
+              />
+            </Field>
+
+            <Field label="Ward" htmlFor="checkout-ward" error={fieldErrors.delivery_ward}>
+              <Input
+                id="checkout-ward"
+                value={deliveryWard}
+                onChange={(event) => setDeliveryWard(event.target.value)}
+                placeholder="e.g. 04"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.delivery_ward)}
+                required
               />
             </Field>
           </div>
+
+          <Field
+            label="Landmark / Tole (optional)"
+            htmlFor="checkout-landmark"
+            hint="This is what the rider actually looks for."
+          >
+            <Input
+              id="checkout-landmark"
+              value={deliveryLandmark}
+              onChange={(event) => setDeliveryLandmark(event.target.value)}
+              placeholder="e.g. opposite NIC Asia Bank"
+            />
+          </Field>
 
           <Field label="Order notes (optional)" htmlFor="checkout-notes">
             <Textarea
@@ -997,7 +1115,7 @@ export function CheckoutForm({
             <div className="flex justify-between">
               <dt className="text-charcoal-soft">Delivery</dt>
               <dd className="font-medium text-price">
-                {totals.shipping === 0 ? 'Free' : formatNPR(totals.shipping)}
+                {shippingNpr === 0 ? 'Free' : formatNPR(shippingNpr)}
               </dd>
             </div>
             {discountNpr > 0 ? (
@@ -1016,10 +1134,10 @@ export function CheckoutForm({
             </div>
           </dl>
 
-          {totals.freeShippingRemaining > 0 && (
+          {freeShippingRemaining > 0 && (
             <p className="flex items-start gap-2 rounded-xl bg-blush-100 p-3 text-xs text-charcoal-soft">
               <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              Add {formatNPR(totals.freeShippingRemaining)} more for free delivery.
+              Add {formatNPR(freeShippingRemaining)} more for free delivery.
             </p>
           )}
 

@@ -128,6 +128,39 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   }
 }
 
+/**
+ * The sibling sizes/strengths of one product (migration 0025).
+ *
+ * Each sibling is its own row with its own price and stock — that is the whole point of the model
+ * — so the product page links to the sibling rather than deriving anything from the current row.
+ * Ordered numerically-ish (`3%`, `6%`, `9%`, `12%` rather than `12%` first).
+ */
+export async function getProductVariants(group: string): Promise<Product[]> {
+  if (!group) return [];
+
+  if (isDemoMode()) return demoCommerceDb.getProductVariants(group);
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('is_active', true)
+      .eq('variant_group', group);
+
+    if (error) throw new Error(error.message);
+
+    const rows = (data ?? []) as Product[];
+    return rows.sort((a, b) =>
+      (a.variant_value ?? a.name).localeCompare(b.variant_value ?? b.name, undefined, {
+        numeric: true,
+      })
+    );
+  } catch (error) {
+    return degraded(`getProductVariants(${group})`, error, []);
+  }
+}
+
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   return getProducts({ featuredOnly: true, sort: 'newest', limit });
 }

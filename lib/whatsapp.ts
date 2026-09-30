@@ -217,6 +217,55 @@ export function createCheckoutFallbackLink(opts: {
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
+/**
+ * Quick order link — the no-registration path.
+ *
+ * A shopper who would rather not create an account or fill in a checkout form taps "Order via
+ * WhatsApp" and lands in a chat with the order already written out: every line with its quantity
+ * and price, the total, and where to deliver.
+ *
+ * This is a first-class way to buy, not a recovery route, which is why the wording is a customer
+ * *placing* an order. `createCheckoutFallbackLink` covers the other case — re-sending a basket by
+ * hand after a checkout failed.
+ *
+ * `delivery_location` is optional and the line is dropped entirely when missing rather than
+ * printed empty: "Delivery Location:" with nothing after it reads as a mistake in a chat.
+ */
+export function createCartOrderLink(opts: {
+  items: Array<{
+    name: string;
+    /** A shade or size, appended in brackets when present. */
+    variant?: string | null;
+    quantity: number;
+    line_total_npr: number;
+  }>;
+  total_npr: number;
+  delivery_location?: string | null;
+  business_whatsapp: string;
+}): string {
+  const cleanPhone = normalizeWhatsAppNumber(opts.business_whatsapp);
+
+  const lines = opts.items
+    .map(
+      (item) =>
+        `- ${item.name}${item.variant ? ` (${item.variant})` : ''} (Qty: ${item.quantity}) - NPR ${item.line_total_npr.toLocaleString(
+          'en-IN'
+        )}`
+    )
+    .join('\n');
+
+  const location = opts.delivery_location?.trim();
+
+  const text =
+    `Namaste Alikati Beauty Home! I would like to place an order:\n` +
+    `${lines}\n` +
+    `Total Order Value: NPR ${opts.total_npr.toLocaleString('en-IN')}\n` +
+    (location ? `Delivery Location: ${location}\n` : '') +
+    `Please confirm stock availability and delivery.`;
+
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+}
+
 /** Fulfilment update sent BY the salon TO the customer from the orders screen. */
 export function createOrderStatusLink(opts: {
   customer_phone: string;
