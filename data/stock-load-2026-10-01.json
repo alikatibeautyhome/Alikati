@@ -1,0 +1,884 @@
+[
+  {
+    "name": "Clarifying & Soothing Toner",
+    "slug": "lotus-clarifying-soothing-toner",
+    "sku": "ABH-LOT-01",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 950,
+    "stock_qty": 6,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/phytorx-clarifying-and-soothing-toner-lotus-professional-1.jpg?v=1665484223",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/phytorx-clarifying-and-soothing-toner-lotus-professional-1.jpg?v=1665484223"
+    ]
+  },
+  {
+    "name": "Facial Mist",
+    "slug": "lotus-facial-mist",
+    "sku": "ABH-LOT-02",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 900,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://www.bonanzasalon.com/wp-content/uploads/2026/03/664e0d41-c893-4a3c-98e2-6abd74ebbcd1-removebg-preview-1.png",
+    "images": [
+      "https://www.bonanzasalon.com/wp-content/uploads/2026/03/664e0d41-c893-4a3c-98e2-6abd74ebbcd1-removebg-preview-1.png"
+    ]
+  },
+  {
+    "name": "SPF 70",
+    "slug": "lotus-spf-70",
+    "sku": "ABH-LOT-03",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1600,
+    "stock_qty": 8,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://static-01.daraz.com.np/p/6fca6cf9fe8dea33076e47dd9189e847.jpg",
+    "images": [
+      "https://static-01.daraz.com.np/p/6fca6cf9fe8dea33076e47dd9189e847.jpg"
+    ]
+  },
+  {
+    "name": "SPF 50",
+    "slug": "lotus-spf-50",
+    "sku": "ABH-LOT-04",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1270,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/01_926dbcf2-5857-4e09-b887-2736f9fb5d76.jpg?v=1746681140",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/01_926dbcf2-5857-4e09-b887-2736f9fb5d76.jpg?v=1746681140"
+    ]
+  },
+  {
+    "name": "Sunscreen Serum 50",
+    "slug": "lotus-sunscreen-serum-50",
+    "sku": "ABH-LOT-05",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1100,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0526/8655/3244/files/1600x1600-2_c870c070-601d-4f77-a165-eb48d7319d66.jpg",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0526/8655/3244/files/1600x1600-2_c870c070-601d-4f77-a165-eb48d7319d66.jpg"
+    ]
+  },
+  {
+    "name": "Rice Face Wash",
+    "slug": "lotus-rice-face-wash",
+    "sku": "ABH-LOT-06",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 790,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Derma Sage Face Wash",
+    "slug": "lotus-derma-sage-face-wash",
+    "sku": "ABH-LOT-07",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 850,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0526/8655/3244/files/PDPCleanserCover.png",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0526/8655/3244/files/PDPCleanserCover.png"
+    ]
+  },
+  {
+    "name": "Derma Soothe Gel",
+    "slug": "lotus-derma-soothe-gel",
+    "sku": "ABH-LOT-08",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1600,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Niacinamide Vitamin C Serum",
+    "slug": "lotus-niacinamide-vitamin-c-serum",
+    "sku": "ABH-LOT-09",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1250,
+    "stock_qty": 6,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/PHYTORx-Niacinamide-_-Vitamin-C-Booster_aSerum-1_PDP.jpg",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/PHYTORx-Niacinamide-_-Vitamin-C-Booster_aSerum-1_PDP.jpg"
+    ]
+  },
+  {
+    "name": "Hyaluronic Serum",
+    "slug": "lotus-hyaluronic-serum",
+    "sku": "ABH-LOT-10",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1350,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/PHYTORx-Hyaluronic-Acid-_-Vitamin-E-Booster_aSerum-1_PDP.jpg",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0526/8655/3244/products/PHYTORx-Hyaluronic-Acid-_-Vitamin-E-Booster_aSerum-1_PDP.jpg"
+    ]
+  },
+  {
+    "name": "Green Tea Face Pack",
+    "slug": "lotus-green-tea-face-pack",
+    "sku": "ABH-LOT-11",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 900,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://m.media-amazon.com/images/I/51yWFeSlg-L._SX425_.jpg",
+    "images": [
+      "https://m.media-amazon.com/images/I/51yWFeSlg-L._SX425_.jpg"
+    ]
+  },
+  {
+    "name": "Anti-aging Day Cream",
+    "slug": "lotus-anti-aging-day-cream",
+    "sku": "ABH-LOT-12",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1550,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/YouthRXantiageingdaycream.jpg?v=1688805757",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/YouthRXantiageingdaycream.jpg?v=1688805757"
+    ]
+  },
+  {
+    "name": "Anti-aging Night Cream",
+    "slug": "lotus-anti-aging-night-cream",
+    "sku": "ABH-LOT-13",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1500,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/YouthRXantiageingnightcreme_899b92bd-4855-4214-95da-73a3259112a3.jpg?v=1688806379",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/YouthRXantiageingnightcreme_899b92bd-4855-4214-95da-73a3259112a3.jpg?v=1688806379"
+    ]
+  },
+  {
+    "name": "Blemishes Night Cream",
+    "slug": "lotus-blemishes-night-cream",
+    "sku": "ABH-LOT-14",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1390,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Moisturizer",
+    "slug": "lotus-moisturizer",
+    "sku": "ABH-LOT-15",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1260,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/products/Lotus-Herbals2313-copy.png?v=1688801966",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/products/Lotus-Herbals2313-copy.png?v=1688801966"
+    ]
+  },
+  {
+    "name": "Whitening Day Cream",
+    "slug": "lotus-whitening-day-cream",
+    "sku": "ABH-LOT-16",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1270,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/WG_brightening_Gel_creme_01_c7d0ac99-a8bb-452e-a234-6ee058959f5f.jpg?v=1764392252",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/WG_brightening_Gel_creme_01_c7d0ac99-a8bb-452e-a234-6ee058959f5f.jpg?v=1764392252"
+    ]
+  },
+  {
+    "name": "Whitening Night Cream",
+    "slug": "lotus-whitening-night-cream",
+    "sku": "ABH-LOT-17",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 1270,
+    "stock_qty": 5,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/WG_brightening_Gel_creme_01_092e3dd4-9bb4-4569-be30-d08a90bd109d.jpg?v=1747726378",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/WG_brightening_Gel_creme_01_092e3dd4-9bb4-4569-be30-d08a90bd109d.jpg?v=1747726378"
+    ]
+  },
+  {
+    "name": "Custin Cream",
+    "slug": "lotus-custin-cream",
+    "sku": "ABH-LOT-18",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 950,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Retinol Combo",
+    "slug": "lotus-retinol-combo",
+    "sku": "ABH-LOT-19",
+    "category_id": "cf4625b9-f1a6-4c3d-95b7-e494d046a160",
+    "brand": "Lotus",
+    "price_npr": 2600,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/Bakuchiol-Advanced-Anti-Ageing-Duo-ShopLotusOrganic-1695721468846.jpg?v=1733814388",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0428/8063/0937/files/Bakuchiol-Advanced-Anti-Ageing-Duo-ShopLotusOrganic-1695721468846.jpg?v=1733814388"
+    ]
+  },
+  {
+    "name": "4 Layer Anti-aging",
+    "slug": "lotus-professional-4-layer-anti-aging",
+    "sku": "ABH-FAC-01",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 5800,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/04/SmfzjJIG-600x600.webp",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/04/SmfzjJIG-600x600.webp"
+    ]
+  },
+  {
+    "name": "4 Layer Whitening",
+    "slug": "lotus-professional-4-layer-whitening",
+    "sku": "ABH-FAC-02",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 5600,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0523/9934/1736/files/026-lotus-professional-4-layers-advanced-skin-whitening-facial-kit.jpg?v=1724664566",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0523/9934/1736/files/026-lotus-professional-4-layers-advanced-skin-whitening-facial-kit.jpg?v=1724664566"
+    ]
+  },
+  {
+    "name": "Retinol",
+    "slug": "lotus-professional-retinol",
+    "sku": "ABH-FAC-03",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 6100,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0356/7144/1545/files/Lotus_Professional_Retemin_Plant_Retinol_Vit_C_Youth_Facial.webp?v=1784628801",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0356/7144/1545/files/Lotus_Professional_Retemin_Plant_Retinol_Vit_C_Youth_Facial.webp?v=1784628801"
+    ]
+  },
+  {
+    "name": "Gold Seen",
+    "slug": "lotus-professional-gold-seen",
+    "sku": "ABH-FAC-04",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 5300,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0523/9934/1736/files/022-lotus-professional-goldsheen-facial-kit.jpg?v=1724664586",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0523/9934/1736/files/022-lotus-professional-goldsheen-facial-kit.jpg?v=1724664586"
+    ]
+  },
+  {
+    "name": "Deep Pigmentation",
+    "slug": "lotus-professional-deep-pigmentation",
+    "sku": "ABH-FAC-05",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 3700,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.shopify.com/s/files/1/0356/7144/1545/files/Lotus_Professional_Dipigmentone_-_Niram.in.jpg?v=1788515866",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0356/7144/1545/files/Lotus_Professional_Dipigmentone_-_Niram.in.jpg?v=1788515866"
+    ]
+  },
+  {
+    "name": "Miraki",
+    "slug": "lotus-professional-miraki",
+    "sku": "ABH-FAC-06",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 3000,
+    "stock_qty": 6,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/07/mira.jpg",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/07/mira.jpg"
+    ]
+  },
+  {
+    "name": "Bridal Glow",
+    "slug": "lotus-professional-bridal-glow",
+    "sku": "ABH-FAC-07",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 3700,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/07/648518-medium.png",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/07/648518-medium.png"
+    ]
+  },
+  {
+    "name": "Lacto Detan",
+    "slug": "lotus-professional-lacto-detan",
+    "sku": "ABH-FAC-08",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 3600,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/08/shopping-4-600x735.webp",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/08/shopping-4-600x735.webp"
+    ]
+  },
+  {
+    "name": "Derma Sage",
+    "slug": "lotus-professional-derma-sage",
+    "sku": "ABH-FAC-09",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 5600,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Hydravitals Cleanser",
+    "slug": "lotus-professional-hydravitals-cleanser",
+    "sku": "ABH-FAC-10",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1400,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn2.clevup.in/301417/1683607035671_SKU-0629_0.jpg",
+    "images": [
+      "https://cdn2.clevup.in/301417/1683607035671_SKU-0629_0.jpg"
+    ]
+  },
+  {
+    "name": "Hydravitals Scrub",
+    "slug": "lotus-professional-hydravitals-scrub",
+    "sku": "ABH-FAC-11",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1560,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-2024-03-30T163859.076.png",
+    "images": [
+      "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-2024-03-30T163859.076.png"
+    ]
+  },
+  {
+    "name": "Hydravitals Massage Cream",
+    "slug": "lotus-professional-hydravitals-massage-cream",
+    "sku": "ABH-FAC-12",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1950,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/09/936141.jpg",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/09/936141.jpg"
+    ]
+  },
+  {
+    "name": "Hydravitals Toner",
+    "slug": "lotus-professional-hydravitals-toner",
+    "sku": "ABH-FAC-13",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1200,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-2024-03-28T164739.818.png",
+    "images": [
+      "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-2024-03-28T164739.818.png"
+    ]
+  },
+  {
+    "name": "Puravitals Cleanser",
+    "slug": "lotus-professional-puravitals-cleanser",
+    "sku": "ABH-FAC-14",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1300,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://professionalmakeuphub.com/wp-content/uploads/2026/04/gWQZaTC7.jpeg",
+    "images": [
+      "https://professionalmakeuphub.com/wp-content/uploads/2026/04/gWQZaTC7.jpeg"
+    ]
+  },
+  {
+    "name": "Puravitals Gel Scrub",
+    "slug": "lotus-professional-puravitals-gel-scrub",
+    "sku": "ABH-FAC-15",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1400,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://boxonwheelz.in/cdn/shop/files/41hxFWsPFpL.jpg?v=1716906041",
+    "images": [
+      "https://boxonwheelz.in/cdn/shop/files/41hxFWsPFpL.jpg?v=1716906041"
+    ]
+  },
+  {
+    "name": "Puravitals Toner",
+    "slug": "lotus-professional-puravitals-toner",
+    "sku": "ABH-FAC-16",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1300,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-98.png",
+    "images": [
+      "https://beautifulstore.in/wp-content/uploads/2024/03/Image_Editor-98.png"
+    ]
+  },
+  {
+    "name": "Rejuvina Lotion",
+    "slug": "lotus-professional-rejuvina-lotion",
+    "sku": "ABH-FAC-17",
+    "category_id": "07548438-5c0e-48f1-8a5a-8d30c7e4c2c0",
+    "brand": "Lotus Professional",
+    "price_npr": 1600,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/d73d2bfbe308c5af4801eb03a046f9a7.jpg_720x720q80.jpg",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/d73d2bfbe308c5af4801eb03a046f9a7.jpg_720x720q80.jpg"
+    ]
+  },
+  {
+    "name": "Mild Foam Cleanser",
+    "slug": "newlook-mild-foam-cleanser",
+    "sku": "ABH-NWL-01",
+    "category_id": "24a5a073-b37d-47d0-8fa3-80ac1ed36efa",
+    "brand": "Newlook",
+    "price_npr": 550,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Sunscreen",
+    "slug": "newlook-sunscreen",
+    "sku": "ABH-NWL-02",
+    "category_id": "24a5a073-b37d-47d0-8fa3-80ac1ed36efa",
+    "brand": "Newlook",
+    "price_npr": 1500,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/bef831e0340a47dfa2dfecf98ce8c0d9/New_Look/SunscreenSPF50.png_lg_.webp",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/bef831e0340a47dfa2dfecf98ce8c0d9/New_Look/SunscreenSPF50.png_lg_.webp"
+    ]
+  },
+  {
+    "name": "Moisturizer",
+    "slug": "newlook-moisturizer",
+    "sku": "ABH-NWL-03",
+    "category_id": "24a5a073-b37d-47d0-8fa3-80ac1ed36efa",
+    "brand": "Newlook",
+    "price_npr": 1600,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/bef831e0340a47dfa2dfecf98ce8c0d9/New_Look/RichMoisturizer.png_lg_.webp",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/bef831e0340a47dfa2dfecf98ce8c0d9/New_Look/RichMoisturizer.png_lg_.webp"
+    ]
+  },
+  {
+    "name": "Face Wash",
+    "slug": "newlook-face-wash",
+    "sku": "ABH-NWL-04",
+    "category_id": "24a5a073-b37d-47d0-8fa3-80ac1ed36efa",
+    "brand": "Newlook",
+    "price_npr": 550,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://d2wfc4v12a2zxr.cloudfront.net/resized/large/products/newlook-mens-facewash-60ml__19491_27558_1683450211.webp",
+    "images": [
+      "https://d2wfc4v12a2zxr.cloudfront.net/resized/large/products/newlook-mens-facewash-60ml__19491_27558_1683450211.webp"
+    ]
+  },
+  {
+    "name": "Niacinamide Serum",
+    "slug": "loire-niacinamide-serum",
+    "sku": "ABH-LOI-01",
+    "category_id": "1eeb1b9c-88a9-48f3-97d0-0b086a7bc6f6",
+    "brand": "Loire",
+    "price_npr": 1400,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://www.epharmacy.com.np/content/images/thumbs/6870a8e7d956d3323a0c19b4_loire-niacinamide-serum-30ml.jpeg",
+    "images": [
+      "https://www.epharmacy.com.np/content/images/thumbs/6870a8e7d956d3323a0c19b4_loire-niacinamide-serum-30ml.jpeg"
+    ]
+  },
+  {
+    "name": "Vitamin C Serum",
+    "slug": "loire-vitamin-c-serum",
+    "sku": "ABH-LOI-02",
+    "category_id": "1eeb1b9c-88a9-48f3-97d0-0b086a7bc6f6",
+    "brand": "Loire",
+    "price_npr": 1400,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://www.epharmacy.com.np/content/images/thumbs/6870a689d956d3323afe012c_loire-vitamin-c-serum-with-hyaluronic-acid-30ml.jpeg",
+    "images": [
+      "https://www.epharmacy.com.np/content/images/thumbs/6870a689d956d3323afe012c_loire-vitamin-c-serum-with-hyaluronic-acid-30ml.jpeg"
+    ]
+  },
+  {
+    "name": "Sunscreen",
+    "slug": "loire-sunscreen",
+    "sku": "ABH-LOI-03",
+    "category_id": "1eeb1b9c-88a9-48f3-97d0-0b086a7bc6f6",
+    "brand": "Loire",
+    "price_npr": 1600,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://www.epharmacy.com.np/content/images/thumbs/6870a3ccd956d3323ae1f5c7_loire-aqua-sunscreen-gel-spf-50-100gm.jpeg",
+    "images": [
+      "https://www.epharmacy.com.np/content/images/thumbs/6870a3ccd956d3323ae1f5c7_loire-aqua-sunscreen-gel-spf-50-100gm.jpeg"
+    ]
+  },
+  {
+    "name": "Moisturizer",
+    "slug": "loire-moisturizer",
+    "sku": "ABH-LOI-04",
+    "category_id": "1eeb1b9c-88a9-48f3-97d0-0b086a7bc6f6",
+    "brand": "Loire",
+    "price_npr": 1400,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/d95512654521b6dc9d2327d665442a32.jpg_720x720q80.jpg",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/d95512654521b6dc9d2327d665442a32.jpg_720x720q80.jpg"
+    ]
+  },
+  {
+    "name": "Toner",
+    "slug": "sumnimaa-toner",
+    "sku": "ABH-SUM-01",
+    "category_id": "e7539b1f-b4eb-4849-af29-a71aa0d9a8bc",
+    "brand": "Sumnimaa",
+    "price_npr": 350,
+    "stock_qty": 6,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Rice Toner",
+    "slug": "sumnimaa-rice-toner",
+    "sku": "ABH-SUM-02",
+    "category_id": "e7539b1f-b4eb-4849-af29-a71aa0d9a8bc",
+    "brand": "Sumnimaa",
+    "price_npr": 650,
+    "stock_qty": 6,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Rose Water",
+    "slug": "sumnimaa-rose-water",
+    "sku": "ABH-SUM-03",
+    "category_id": "e7539b1f-b4eb-4849-af29-a71aa0d9a8bc",
+    "brand": "Sumnimaa",
+    "price_npr": 135,
+    "stock_qty": 12,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": null,
+    "images": []
+  },
+  {
+    "name": "Vitamin Cleanser",
+    "slug": "acnes-vitamin-cleanser",
+    "sku": "ABH-ACN-01",
+    "category_id": "4de0d8bb-3307-4a56-b251-e5d692e900be",
+    "brand": "Acnes",
+    "price_npr": 264,
+    "stock_qty": 5,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/c36db5096a69cafc5be3af4d4f9e9455.jpg_720x720q80.jpg_.webp",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/c36db5096a69cafc5be3af4d4f9e9455.jpg_720x720q80.jpg_.webp"
+    ]
+  },
+  {
+    "name": "Creamy Wash",
+    "slug": "acnes-creamy-wash",
+    "sku": "ABH-ACN-02",
+    "category_id": "4de0d8bb-3307-4a56-b251-e5d692e900be",
+    "brand": "Acnes",
+    "price_npr": 230,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/3bb843d92c43837c3816bec02bb7bb5f.jpg_720x720q80.jpg",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/3bb843d92c43837c3816bec02bb7bb5f.jpg_720x720q80.jpg"
+    ]
+  },
+  {
+    "name": "C10 Serum",
+    "slug": "acnes-c10-serum",
+    "sku": "ABH-ACN-03",
+    "category_id": "4de0d8bb-3307-4a56-b251-e5d692e900be",
+    "brand": "Acnes",
+    "price_npr": 1775,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/23f3adf053d95d92e38d6f9a053ba0cc.jpg_720x720q80.jpg",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/23f3adf053d95d92e38d6f9a053ba0cc.jpg_720x720q80.jpg"
+    ]
+  },
+  {
+    "name": "Streax Hair Color",
+    "slug": "streax-hair-color",
+    "sku": "ABH-HRC-01",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": "Streax",
+    "price_npr": 280,
+    "stock_qty": 17,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://img.drz.lazcdn.com/static/np/p/73a52a815465cbf4e3e00ea7a0bb56fd.jpg",
+    "images": [
+      "https://img.drz.lazcdn.com/static/np/p/73a52a815465cbf4e3e00ea7a0bb56fd.jpg"
+    ]
+  },
+  {
+    "name": "Streax Hair Serum",
+    "slug": "streax-hair-serum",
+    "sku": "ABH-HRC-02",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": "Streax",
+    "price_npr": 190,
+    "stock_qty": 4,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/603d72c5efbe463d806e42e8fafcdc1b/Streax/Hair-Styling/StreaxHairSerumVitalisededf74995db9e4894ba44e9b95f198f0e.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/603d72c5efbe463d806e42e8fafcdc1b/Streax/Hair-Styling/StreaxHairSerumVitalisededf74995db9e4894ba44e9b95f198f0e.png"
+    ]
+  },
+  {
+    "name": "Well 10 Hair Colour (100 gm)",
+    "slug": "well-10-hair-colour-100-gm",
+    "sku": "ABH-HRC-03",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": "Well 10",
+    "price_npr": 900,
+    "stock_qty": 28,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HAIRCOLORCREAM.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HAIRCOLORCREAM.png"
+    ]
+  },
+  {
+    "name": "Well 10 Hair Colour (60 gm)",
+    "slug": "well-10-hair-colour-60-gm",
+    "sku": "ABH-HRC-04",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": "Well 10",
+    "price_npr": 500,
+    "stock_qty": 22,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HAIRCOLORCREAM.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HAIRCOLORCREAM.png"
+    ]
+  },
+  {
+    "name": "Hair Blonder",
+    "slug": "hair-blonder",
+    "sku": "ABH-HRC-05",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 800,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://welltencosmetic.com/image/cache/catalog/well10/Nov%2028/28-500x500w.jpg",
+    "images": [
+      "https://welltencosmetic.com/image/cache/catalog/well10/Nov%2028/28-500x500w.jpg"
+    ]
+  },
+  {
+    "name": "Developer 12%",
+    "slug": "developer-12",
+    "sku": "ABH-HRC-06",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 700,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png"
+    ]
+  },
+  {
+    "name": "Developer 9%",
+    "slug": "developer-9",
+    "sku": "ABH-HRC-07",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 700,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png"
+    ]
+  },
+  {
+    "name": "Developer 6%",
+    "slug": "developer-6",
+    "sku": "ABH-HRC-08",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 700,
+    "stock_qty": 2,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png"
+    ]
+  },
+  {
+    "name": "Developer 3%",
+    "slug": "developer-3",
+    "sku": "ABH-HRC-09",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 700,
+    "stock_qty": 1,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/HairDeveloper.png"
+    ]
+  },
+  {
+    "name": "Blonder",
+    "slug": "blonder",
+    "sku": "ABH-HRC-10",
+    "category_id": "5a126b92-8eb7-4ed6-833b-ab482ab0e01f",
+    "brand": null,
+    "price_npr": 1500,
+    "stock_qty": 3,
+    "low_stock_threshold": 3,
+    "is_active": true,
+    "image_url": "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/WELL10BLONDOR.png",
+    "images": [
+      "https://cdn.yarsa.cloud/static-files/sellers/4364f5b32e964bcc83b1ad85a3e19577/well10/WELL10BLONDOR.png"
+    ]
+  }
+]
