@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CategoryTile } from '@/lib/home-api';
+import { productImageSrc } from '@/lib/product-image';
 
 const PLACEHOLDER = '/media/placeholder-product.svg';
 
@@ -45,8 +46,16 @@ export function CategoryTiles({ tiles }: { tiles: CategoryTile[] }) {
                 className="group flex h-full flex-col rounded-2xl border border-charcoal/10 bg-blush-100 p-3 text-center transition hover:shadow-lift"
               >
                 <span className="relative block aspect-square w-full overflow-hidden rounded-xl bg-blush-200">
+                  {/*
+                    The tile's picture is a product photograph — `getCategoryTiles()` picks a
+                    representative one from the shelf — so it goes through the same pipeline as
+                    every other product image. Rendering the raw stored URL here instead sent it
+                    straight to next/image, which refuses any host missing from `remotePatterns`
+                    and answered 400 for every supplier host the catalogue actually uses: four of
+                    the five tiles were broken images on the homepage.
+                  */}
                   <Image
-                    src={tile.image_url ?? PLACEHOLDER}
+                    src={productImageSrc(tile.image_url, PLACEHOLDER)}
                     alt={tile.name}
                     fill
                     sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 18vw"

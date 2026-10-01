@@ -6,6 +6,7 @@ import { Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { productImageSrc } from '@/lib/product-image';
 import {
   CATEGORY_LABELS,
   discountPercent,
@@ -36,7 +37,15 @@ export function ServiceCard({
 }) {
   const discount = discountPercent(service);
   const price = effectivePrice(service);
-  const imageSrc = service.image_url ?? placeholderFor(service.category);
+  /*
+    Routed through the same `/api/product-image` pipeline the shop uses, rather than handed to
+    next/image raw. A raw remote URL is only served if its host appears in `remotePatterns`, which
+    lists two supplier domains — so any other host an owner pastes in (and the salon's own photos
+    live on Supabase, not on those two) resolved to a 400 and an empty card. The pipeline fetches
+    server-side, so the host stops mattering, and a missing or unusable URL still lands on the
+    category placeholder instead of a broken frame.
+  */
+  const imageSrc = productImageSrc(service.image_url, placeholderFor(service.category));
 
   return (
     <Card className="flex h-full flex-col overflow-hidden">
