@@ -1153,3 +1153,50 @@ precisely the days nothing changed.
   Terraform or CloudFormation.
 
 ---
+
+## v1.26 — Audited against the 14-point checklist; anon write grants revoked (2026-10-06)
+
+Worked through all fourteen items with live tests rather than code reading. One finding mattered, most
+were already sound, and one earlier finding was disproved.
+
+**The finding: the public key could write to every table, held back only by RLS.** Supabase grants
+`anon` and `authenticated` nearly everything by default, intending RLS to narrow it. RLS *was*
+working — a real test proved it, patching a product's price as `anon` returned zero rows and the
+price did not move, and deleting it left the row in place. But that made RLS the *only* thing
+standing between the public anon key (which ships in the browser bundle by design) and the data. One
+future table created without `ENABLE ROW LEVEL SECURITY`, or one policy written `USING (true)` where
+`is_staff()` was meant, and the same key could write. Migration 0027 revokes INSERT/UPDATE/DELETE/
+TRUNCATE/REFERENCES/TRIGGER from `anon` on every table — and, via `ALTER DEFAULT PRIVILEGES`, on every
+table created from now on, which is the half that stops the gap reopening. `TRUNCATE` went from
+`authenticated` too: RLS does not apply to it, so it is the one privilege that would ignore every
+policy, and PostgREST exposes no verb for it anyway. Verified after: anonymous writes now return
+**401 at the grant level, before RLS is consulted**, while all seven public read paths and the
+public reviews list still serve, the staff console still writes, and the storefront is unchanged at
+78/78 pages with 0 broken images and 0 broken links.
+
+**Proved, not assumed.** #6 unauthenticated access: every protected table returns **0 rows** to a
+stranger; staff-only tables return 401. #9 IDOR: random-id lookups on orders, customers, profiles,
+appointments and leads all return nothing, and the writing paths are protected by RLS then the grant.
+#1 API key isolation: **0 secret hits across 516 git history objects**, and the only two files
+holding secrets are the gitignored ones. #2 browser bundles: **0 service-role leaks across 75 client
+bundles**; the five `NEXT_PUBLIC_*` values are all things that are public by design. #8 password
+handling: hashes are `$2a$10$` — **bcrypt** via Supabase's own auth, with no custom hashing anywhere
+in the application. #7 server-side validation: routes verify the caller's token against the Auth
+server rather than trusting client state, and all five service-role routes validate input first.
+#14 lock file discipline: lockfile v3, all 20 declared dependencies resolved, `npm ci` clean.
+
+**Disproved: the earlier "missing CSP" finding.** It is served, locally and publicly, and has been
+since v1.24. That scan predated the deployment — worth knowing when reading the next report.
+
+**Also cleaned up:** a test review I had left in the moderation queue ("Testing the review endpoint
+end to end", unapproved so never public) is gone, along with a sweep confirming no other test rows
+remain in any table.
+
+**Still open:** #10 wants a schema validation library; Zod is not installed, and routes validate by
+hand with length limits, type checks and enum checks. Worth adding for maintainability — though note
+the security benefit here is small, because SQL injection is already structurally impossible
+(PostgREST parameterises everything; there is no raw SQL in the application) and XSS is handled by
+React's escaping plus the CSP. #3 production secrets move into the hosting dashboard only once there
+is a deployment to put them in.
+
+---
