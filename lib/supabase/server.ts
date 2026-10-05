@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { AUTH_COOKIE_OPTIONS } from '@/lib/supabase/cookie-options';
 
 /** Shape of the cookie batch handed to `setAll` by @supabase/ssr. */
 type CookieToSet = { name: string; value: string; options: CookieOptions };
@@ -23,7 +24,8 @@ export async function createClient() {
         setAll(cookiesToSet: CookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              // Enforce our flags over the library's defaults — see cookie-options.ts.
+              cookieStore.set(name, value, { ...options, ...AUTH_COOKIE_OPTIONS })
             );
           } catch {
             // Called from a Server Component where cookies are read-only.

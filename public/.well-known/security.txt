@@ -1,0 +1,26 @@
+# Security contact — RFC 9116
+#
+# Served at /.well-known/security.txt from public/.well-known/.
+#
+# The point of this file is to give a researcher who finds something a way to report it *privately*.
+# Without it the realistic outcomes are a public write-up, a silent exploit, or a message to a
+# general enquiries inbox that gets read as spam — and for a shop holding customer names, phone
+# numbers and addresses, the difference between those is the difference between a patch and a leak.
+#
+# `Expires` is a real requirement of the format, not decoration: a stale file tells a researcher the
+# contact details are unmaintained and worth ignoring. Refresh the date below at least once a year.
+
+Contact: mailto:alikatibeautyhome@gmail.com
+Contact: https://wa.me/9779869512756
+Contact: tel:+977-9869512756
+
+# Set well inside the one-year maximum so the file is renewed before it lapses.
+Expires: 2027-10-01T00:00:00.000Z
+
+Preferred-Languages: en, ne
+
+Canonical: https://alikatibeautyhome.com/.well-known/security.txt
+Policy: https://alikatibeautyhome.com/privacy
+
+# What we would ask a reporter to include, so a first message is actionable rather than a round trip.
+Acknowledgments: https://alikatibeautyhome.com/contact

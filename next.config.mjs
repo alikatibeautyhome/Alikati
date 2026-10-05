@@ -104,6 +104,19 @@ const nextConfig = {
           // Prevents the browser resolving hostnames for links before the user follows them.
           { key: 'X-DNS-Prefetch-Control', value: 'off' },
           /*
+            Cross-origin isolation. Each of these closes a specific cross-site behaviour:
+
+            • COOP `same-origin` — severs the `window.opener` link to any page that opens this one,
+              which is the handle used to navigate a tab the user thinks is still the shop.
+            • CORP `same-site`    — stops another origin loading our responses as a subresource,
+              which is how a page can read data out of an endpoint it cannot call.
+            • X-Permitted-Cross-Domain-Policies `none` — retires the old Flash/PDF
+              crossdomain.xml mechanism outright.
+          */
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          /*
             Production only. HSTS is a one-way instruction the browser caches for a year: sending it
             over local http would pin a developer's browser to https for localhost and is painful to
             undo. No `includeSubDomains` yet — that would commit every subdomain, including any that

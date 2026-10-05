@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { AUTH_COOKIE_OPTIONS } from '@/lib/supabase/cookie-options';
 
 export { isSupabaseConfigured, isDemoMode, DEMO_CREDENTIALS } from '@/lib/supabase/config';
 

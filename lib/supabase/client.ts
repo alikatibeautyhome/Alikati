@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { AUTH_COOKIE_OPTIONS } from '@/lib/supabase/cookie-options';
 
 /**
  * Browser Supabase client (public site interactions + admin SPA).
@@ -16,7 +17,8 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, anonKey);
+  // Session cookie flags: see lib/supabase/cookie-options.ts for why each is set.
+  return createBrowserClient(url, anonKey, { cookieOptions: AUTH_COOKIE_OPTIONS });
 }
 
 let cached: ReturnType<typeof createClient> | null = null;
