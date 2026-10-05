@@ -9,6 +9,7 @@ import { LowStockAlert } from '@/components/admin/LowStockAlert';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { getAppointmentsByDate, getCurrentStaff, signOutStaff } from '@/lib/api-client';
+import { getMfaStatus } from '@/lib/security/mfa';
 import { todayISO } from '@/lib/utils';
 import type { StaffProfile } from '@/types/database.types';
 
@@ -35,12 +36,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     let active = true;
     getCurrentStaff()
-      .then((current) => {
+      .then(async (current) => {
         if (!active) return;
         if (!current) {
           router.replace('/login');
           return;
         }
+
+        /*
+          Second gate, after the password one.
+
+          If this account has enrolled an authenticator, a password-only session is aal1 and must
+          not open the console. Without this check the login screen's challenge step would be
+          advisory: anyone could sign in with a password and then browse straight to /admin,
+          by which point the code would never be asked for. Supabase owns the aal1/aal2 state, so
+          this asks it rather than trusting a client-side flag that could be tampered with.
+        */
+        const mfa = await getMfaStatus();
+        if (mfa.challengeRequired) {
+          router.replace('/login?next=' + encodeURIComponent(pathname || '/admin'));
+          return;
+        }
+
         setStaff(current);
       })
       .catch(() => {
@@ -52,7 +69,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => {
       active = false;
     };
-  }, [router]);
+    // `pathname` is read for the post-MFA redirect target, so it belongs in the dependency list.
+  }, [router, pathname]);
 
   // Collapse the mobile drawer whenever the route changes.
   useEffect(() => {

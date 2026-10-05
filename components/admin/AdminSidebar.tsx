@@ -16,6 +16,7 @@ import {
   Settings,
   Share2,
   FolderOpen,
+  KeyRound,
   ShieldCheck,
   Star,
   Ticket,
@@ -60,6 +61,7 @@ const SHOP_ITEMS: NavItem[] = [
 /** Team & access control — who can sign in to the console. */
 const TEAM_ITEMS: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: ShieldCheck },
+  { href: '/admin/security', label: 'Security', icon: KeyRound },
 ];
 
 const SETTINGS_ITEM: NavItem = { href: '/admin/settings', label: 'Settings', icon: Settings };

@@ -1093,3 +1093,63 @@ resolution, private-IP block); the admin boundary returning 403 for a signed-in 
 No regression: 83/83 pages 200, 0 broken images, 0 broken links, `tsc` and build clean.
 
 ---
+
+## v1.25 — Audited against the OWASP-style security checklist (2026-10-06)
+
+Worked through all seventeen sections against a running build, recording evidence for each rather
+than assuming. Two real gaps closed; most of the list was already satisfied, and the rest is
+organisational rather than code.
+
+**§1 Authentication — two-factor authentication added.** The console holds every customer's name,
+phone number and delivery address, so a stolen password was enough to reach all of it. Supabase's
+TOTP support is now wired up: enrol from `/admin/security` by scanning a QR into any authenticator
+app, and the account then requires a 6-digit code at every sign-in. Enforcement keys on Supabase's
+own `aal1`/`aal2` claim rather than a client-side flag, so it cannot be talked around — and the
+admin guard checks it too, otherwise signing in with a password and navigating straight to `/admin`
+would skip the code entirely. Proven end to end with a throwaway account: a generated code from the
+enrolled secret upgraded the session to `aal2` (`amr: [password, totp]`) while a wrong code was
+refused. Not mandatory — forcing it at deploy would lock out the existing account — but once an
+account opts in, the second factor cannot be bypassed.
+
+**§13 Dependency management — a genuine high-severity advisory fixed.** `npm audit` reported high
+severity in PostCSS. It is transitive and easy to dismiss, but the detail mattered: two copies were
+installed, the app's own at a patched `8.5.28`, while **Next bundles its own at `8.4.31`**, which is
+inside the vulnerable range. Pinned via an npm `overrides` entry rather than a major Next 16 upgrade,
+which would have been a far riskier change to a live shop for a build-time advisory. Now
+**0 vulnerabilities**, with the build and compiled CSS verified unchanged.
+
+**§13/§11 — scanning on a schedule.** Added `.github/workflows/security.yml`: `npm audit` on every
+push and PR, plus a **weekly** run. The weekly part is the point — a dependency becomes vulnerable
+when an advisory is published, not when someone edits a file, so a push-only check reports on
+precisely the days nothing changed.
+
+### Sections confirmed already sound
+
+- **§2 Middleware / §3 RBAC** — `/admin/*` is protected by middleware, and the API returns 403 for a
+  signed-in non-staff user. Roles are `admin` | `staff`, enforced in the database by `is_staff()`,
+  not only in the UI.
+- **§4 Sensitive data** — no service-role key in any of the 74 client bundles; `.env.local` and the
+  secrets file are gitignored; the whole git history scanned clean.
+- **§5 Error handling** — five malformed-hostile requests (bad JSON, array-instead-of-object, 60 kB
+  string, prototype-pollution attempt) all returned generic messages with no stack, path or SQL
+  leakage.
+- **§6 Input validation** — every public write route validates and length-limits, and the image
+  proxy is SSRF-defended (https-only, DNS resolution, private-IP block).
+- **§7 Database** — RLS enabled on every table, 67 policies, none wide-open. No raw SQL in app code.
+- **§9 Secure communications** — HSTS, CSP, `X-Content-Type-Options`, `frame-ancestors` (added in
+  v1.24), plus JSON-LD escaping.
+
+### Still open, and honestly not code problems
+
+- **§10 Logging** — there is still **no audit trail**. Worth doing next: an append-only
+  `security_events` table recording staff changes, MFA changes and settings edits, readable by staff,
+  writable only by the service role. Without it, "review the logs for anomalies" is not possible.
+- **§14 CAPTCHA** — rate limiting is in place; a bot check on reviews and booking would be the next
+  step, and needs a Turnstile/hCaptcha key.
+- **§12 Backups** — no scheduled export and, more importantly, no *tested* restore. A backup nobody
+  has restored is a hope, not a plan.
+- **§11, §16, §17** — penetration testing, incident-response exercises and staff training are
+  operational, not something to add in a commit. §17 does not apply: this project deploys no
+  Terraform or CloudFormation.
+
+---

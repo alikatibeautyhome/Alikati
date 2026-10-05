@@ -1,0 +1,66 @@
+name: Security
+
+# Dependency and type checks on every change, plus a weekly sweep.
+#
+# The weekly run is the part that matters. A dependency is not vulnerable the day it is installed —
+# it becomes vulnerable the day an advisory is published against it, which happens weeks later with
+# nobody touching this repository. A check that only runs on push therefore reports on the day
+# someone happened to edit a file, which is exactly the day nothing changed.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  schedule:
+    # Mondays, 03:17 UTC — deliberately not on the hour, when GitHub's scheduler is busiest and
+    # queued runs get delayed.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` installs exactly the lockfile, so the audit below describes what actually ships.
+      - name: Install
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      # Informational: dev-only advisories are worth seeing but should not stop a release, because
+      # they never reach the deployed application.
+      - name: Audit all dependencies (informational)
+        if: always()
+        continue-on-error: true
+        run: npm audit --audit-level=moderate
+
+  verify:
+    name: Types and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit --incremental false
+
+      # The build runs without database credentials on purpose: `lib/supabase/*` degrades to demo
+      # mode rather than throwing, so a compile error is distinguishable from a missing secret.
+      - name: Build
+        run: npm run build
