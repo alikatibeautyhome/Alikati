@@ -1,6 +1,6 @@
 {
   "name": "alikati-beauty-home",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Alikati Beauty Home \u2014 salon, bridal studio, academy and beauty shop (Next.js App Router + Supabase)",
   "scripts": {
@@ -16,7 +16,8 @@
     "supabase:sql": "node scripts/build-apply-all-sql.mjs",
     "supabase:start": "supabase start",
     "supabase:reset": "supabase db reset",
-    "supabase:push": "supabase db push"
+    "supabase:push": "supabase db push",
+    "security:audit": "python3 scripts/security-audit.py"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

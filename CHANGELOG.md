@@ -1200,3 +1200,79 @@ React's escaping plus the CSP. #3 production secrets move into the hosting dashb
 is a deployment to put them in.
 
 ---
+
+## v2.0.0 — Security-hardened release (2026-10-06)
+
+The first release where the security posture has been **audited and proven** rather than assumed.
+`package.json` finally carries a version that matches this file — it had sat at `1.0.0` since the
+project began while the changelog climbed to 1.26, which is its own small bug.
+
+### Why 2.0
+
+Not because the storefront changed — it looks the same and sells the same. Because the **trust model**
+changed. Until this release the application's data was protected by Row-Level Security alone, with the
+public anon key holding write privileges on every table. That is a single layer, and a single layer
+fails when one policy is written carelessly or one new table forgets `ENABLE ROW LEVEL SECURITY`.
+The database now refuses anonymous writes itself, before any policy is consulted.
+
+### Run the audit yourself
+
+Every claim below is reproducible:
+
+```bash
+npm run security:audit        # or: python3 scripts/security-audit.py
+```
+
+It reports the evidence line for each check and exits non-zero on failure, so CI runs it too. Latest
+run, verbatim:
+
+```
+[PASS] Secret scanning        2 values searched · 522 git objects scanned · in gitignored files 2 (fine)
+                              · in TRACKED files 0 · in git history 0
+[PASS] Client bundle scan     75 client bundles scanned · service-role leaks 0
+[PASS] NEXT_PUBLIC_ prefixes  5 public vars · sensitive-looking prefixes 0
+[PASS] RLS coverage           19 tables · RLS disabled on 0
+[PASS] Anonymous write grants 18 tables grant anon something · 0 grant a WRITE privilege
+[PASS] Anonymous read         protected tables probed with the public key · 0 rows everywhere
+[PASS] Password hashing       5 accounts · hash prefixes ['$2a$10$'] · bcrypt: True
+```
+
+### What changed across this release
+
+**Authentication.** Staff two-factor authentication (TOTP) at `/admin/security`, enforced on both the
+login screen *and* the route guard — the second check matters, because otherwise a password sign-in
+followed by navigating straight to `/admin` skips the code entirely. Enforcement reads Supabase's own
+`aal1`/`aal2` claim rather than a client-side flag. Proven with a generated TOTP: a wrong code was
+refused and a real one upgraded the session to `aal2` with `amr: [password, totp]`.
+
+**Database.** Anonymous write grants revoked on every table, and via `ALTER DEFAULT PRIVILEGES` on
+every future table. `TRUNCATE` also removed from `authenticated` — RLS does not apply to it, making it
+the one privilege that would ignore every policy.
+
+**Transport and headers.** Content-Security-Policy, HSTS, Permissions-Policy, COOP, CORP and
+X-Permitted-Cross-Domain-Policies, with `X-Powered-By` suppressed. Auth cookies now carry `Secure`.
+
+**Input and output.** JSON-LD escaped against `</script>` breakout — the block interpolates free text
+from the settings console. Rate limiting fixed at the root: a spoofable `X-Forwarded-For` header had
+made every limit decorative, and four drifted copies were unified into one.
+
+**Dependencies.** A high-severity PostCSS advisory fixed — Next bundles its own `8.4.31`, inside the
+vulnerable range, while the app's own copy was patched. Pinned by override; `0 vulnerabilities`.
+
+### Known limitations, stated rather than hidden
+
+- **No audit trail.** "Review the logs for anomalies" is not yet possible. This is the largest
+  remaining gap and the next thing worth building.
+- **Session cookies are not HttpOnly.** The browser client must read the token to attach it to Supabase
+  requests, so any XSS on this origin can read the session. That is the argument for a strict CSP and
+  for moving to server-side-only auth.
+- **`script-src` still allows `'unsafe-inline'`.** Removing it needs per-request nonces and forces
+  every page dynamic, giving up the ISR the shop relies on. A real trade-off, not an oversight.
+- **Rate limiting is per-instance** (in-memory), so it resets on deploy. Fine at this scale;
+  `lib/security/rate-limit.ts` is the only file that changes if it ever needs Redis.
+- **Not deployed.** The project has no host yet — which is also why production secrets still live in
+  gitignored local files rather than a dashboard. And no backup has been *restored*, only taken.
+- **No schema validation library.** Routes validate by hand. Worth adding for maintainability; the
+  security gain is small, since PostgREST parameterises every query and there is no raw SQL here.
+
+---
