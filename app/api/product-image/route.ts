@@ -51,6 +51,7 @@ export const dynamic = 'force-dynamic';
  * the CPU exhaustion being guarded against.
  */
 const rateLimited = createRateLimiter({
+  bucket: 'images',
   limit: Number(process.env.IMAGE_RATE_LIMIT_PER_MIN ?? 300),
 });
 
@@ -132,7 +133,7 @@ async function brandMark(width: number): Promise<Buffer> {
 }
 
 export async function GET(request: NextRequest) {
-  if (rateLimited(clientIp(request))) {
+  if (await rateLimited(clientIp(request))) {
     return new NextResponse('Too many image requests. Please slow down.', {
       status: 429,
       headers: { 'Retry-After': '60' },

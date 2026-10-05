@@ -16,6 +16,7 @@ import {
   Settings,
   Share2,
   FolderOpen,
+  History,
   KeyRound,
   ShieldCheck,
   Star,
@@ -62,6 +63,7 @@ const SHOP_ITEMS: NavItem[] = [
 const TEAM_ITEMS: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: ShieldCheck },
   { href: '/admin/security', label: 'Security', icon: KeyRound },
+  { href: '/admin/audit', label: 'Security log', icon: History },
 ];
 
 const SETTINGS_ITEM: NavItem = { href: '/admin/settings', label: 'Settings', icon: Settings };

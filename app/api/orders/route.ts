@@ -33,6 +33,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 /** Ordering is the most valuable thing to a script and the least forgivable to lose, so it is the
  *  tightest limit — a genuine customer places one order, not eight. */
 const rateLimited = createRateLimiter({
+  bucket: 'orders',
   limit: Number(process.env.ORDER_RATE_LIMIT_PER_MIN ?? 8),
 });
 
@@ -83,7 +84,7 @@ function mapPlacementError(raw: string): { status: number; message: string } {
 /* ────────────────────────────────────────────────────────────────── POST ── */
 
 export async function POST(request: NextRequest) {
-  if (rateLimited(clientIp(request))) {
+  if (await rateLimited(clientIp(request))) {
     return NextResponse.json<OrderResult>(
       { ok: false, error: 'Too many attempts. Please try again in a minute.' },
       { status: 429 }

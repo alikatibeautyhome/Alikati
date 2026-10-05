@@ -1,20 +1,30 @@
+import { createAdminClient } from '@/lib/supabase/server';
+
 /**
- * A small fixed-window rate limiter.
+ * Rate limiting, counted in Postgres.
  *
- * This replaces four separately copy-pasted `rateLimited()` helpers — one per public write route —
- * which had already drifted into three different implementations with three different limits. A
- * security control that exists in four slightly different versions is a control whose weakest copy
- * is the real one, so they are now one function with the limit passed in.
+ * ── Why the counter left process memory ──────────────────────────────────────
+ * The previous version kept its counts in a module-level Map, which is per server instance. That had
+ * three consequences, in increasing order of seriousness: a deploy reset every counter to zero; two
+ * instances each allowed the full quota, so the real limit was the advertised limit multiplied by
+ * however many instances the platform had spawned; and each instance held its own copy of the state.
+ * Serverless platforms scale up precisely when traffic is high, which is precisely when a limit
+ * needs to hold.
  *
- * ── What this is honestly not ────────────────────────────────────────────────
- * The counter lives in module memory, so it is **per server instance**: two instances behind a load
- * balancer each allow the full quota, and a deploy resets every counter to zero. For a shop of this
- * size that is a reasonable trade — it stops the ordinary cases (a script hammering checkout, a
- * scraper looping the image proxy) without introducing Redis, another service to run and pay for,
- * and another credential to leak.
+ * The count now lives in a Postgres table, incremented by a single atomic statement
+ * (`rate_limit_hit`, migration 0029). Postgres is already a dependency, so this needs no Redis to
+ * run, pay for, and leak a credential for.
  *
- * If it ever needs to hold under a distributed attack, this file is the only thing that changes:
- * swap the Map for a shared store with the same interface. Everything else calls `limit(key)`.
+ * ── The failure mode is chosen deliberately ──────────────────────────────────
+ * If the database call fails, this **falls back to the in-memory limiter** rather than either
+ * failing open or failing closed:
+ *
+ *   • Failing closed (refuse everything) would turn a database blip into a total outage of
+ *     ordering, booking and review submission — worse than the abuse being guarded against.
+ *   • Failing open would silently disable the control with nothing left in its place.
+ *
+ * The fallback keeps a real limit in force per instance, which is weaker than the shared counter but
+ * far stronger than nothing, and the failure is logged so it is not invisible.
  */
 
 interface Window {
@@ -23,50 +33,65 @@ interface Window {
 }
 
 export interface RateLimiter {
-  /** True when this key has gone over its quota and should be refused. */
-  (key: string): boolean;
+  /** Resolves true when this key has gone over its quota and should be refused. */
+  (key: string): Promise<boolean>;
 }
 
 export interface RateLimiterOptions {
+  /** Namespace for this limiter's counters, e.g. 'booking'. Keeps routes from sharing a budget. */
+  bucket: string;
   /** Requests allowed per window. */
   limit: number;
-  /** Window length in milliseconds. Defaults to one minute. */
-  windowMs?: number;
-  /**
-   * Cap on tracked keys before expired entries are swept. Bounds memory if someone rotates keys —
-   * which, now that the key is a real IP, means a genuine flood rather than one spoofed header.
-   */
-  maxKeys?: number;
+  /** Window length in seconds. Defaults to one minute. */
+  windowSecs?: number;
 }
 
-export function createRateLimiter({
-  limit,
-  windowMs = 60_000,
-  maxKeys = 10_000,
-}: RateLimiterOptions): RateLimiter {
-  const windows = new Map<string, Window>();
+export function createRateLimiter({ bucket, limit, windowSecs = 60 }: RateLimiterOptions): RateLimiter {
+  /*
+    Kept only as the degraded path. Small by design — it exists to hold a line during a database
+    failure, not to be the primary control.
+  */
+  const local = new Map<string, Window>();
 
-  return function limitReached(key: string): boolean {
+  function localOverLimit(key: string): boolean {
     const now = Date.now();
-    const entry = windows.get(key);
+    const entry = local.get(key);
+    const windowMs = windowSecs * 1000;
 
     if (!entry || entry.resetAt <= now) {
-      /*
-        Sweep on insert rather than on a timer: a background interval in a hot path keeps the
-        process awake and does work even when there is no traffic. Expired entries are only ever
-        abandoned, so collecting them here costs nothing extra.
-      */
-      if (windows.size >= maxKeys) {
-        for (const [candidate, window] of windows) {
-          if (window.resetAt <= now) windows.delete(candidate);
+      if (local.size >= 5_000) {
+        for (const [candidate, window] of local) {
+          if (window.resetAt <= now) local.delete(candidate);
         }
       }
-      windows.set(key, { count: 1, resetAt: now + windowMs });
+      local.set(key, { count: 1, resetAt: now + windowMs });
       return false;
     }
-
     entry.count += 1;
     return entry.count > limit;
+  }
+
+  return async function overLimit(key: string): Promise<boolean> {
+    try {
+      const admin = createAdminClient();
+      // Demo mode has no database. The local limiter is the only option, and it is enough there.
+      if (!admin) return localOverLimit(key);
+
+      const { data, error } = await admin.rpc('rate_limit_hit', {
+        p_bucket: `${bucket}:${key}`,
+        p_limit: limit,
+        p_window_secs: windowSecs,
+      });
+
+      if (error) {
+        console.error('[rate-limit] shared counter unavailable, using local fallback:', error.message);
+        return localOverLimit(key);
+      }
+      return data === true;
+    } catch (error) {
+      console.error('[rate-limit] shared counter threw, using local fallback:', error);
+      return localOverLimit(key);
+    }
   };
 }
 

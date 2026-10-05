@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { recordAuditEvent } from '@/lib/security/audit-log';
+import { clientIp } from '@/lib/security/client-ip';
 import { isDemoMode } from '@/lib/supabase/config';
 
 export const dynamic = 'force-dynamic';
@@ -226,6 +228,24 @@ export async function POST(request: NextRequest) {
     await admin.from('profiles').update({ phone }).eq('id', data.user.id);
   }
 
+  /*
+    Recorded after the account exists, so the log never claims something that did not happen. The
+    email answers "which account was created", and the role matters because creating an admin is a
+    different event from creating a customer.
+  */
+  await recordAuditEvent(
+    admin,
+    gate.profile,
+    {
+      action: 'staff.created',
+      entity: 'profiles',
+      entity_id: data.user?.id ?? null,
+      summary: `Created ${role} account ${email}`,
+      metadata: { role, email },
+    },
+    clientIp(request)
+  );
+
   return NextResponse.json({ ok: true, id: data.user?.id, email, role }, { status: 201 });
 }
 
@@ -317,6 +337,27 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: false, error: `Login not updated: ${error.message}` }, { status: 500 });
     }
   }
+
+  await recordAuditEvent(
+    admin,
+    gate.profile,
+    {
+      action: 'staff.updated',
+      entity: 'profiles',
+      entity_id: id,
+      summary: `Updated account (${Object.keys(profilePatch).join(', ') || 'no profile fields'})`,
+      /*
+        Field NAMES only, never values. A password change must be visible — it is one of the most
+        security-relevant things an admin can do — but the password itself must never be written
+        down, so only the key is recorded.
+      */
+      metadata: {
+        profile_fields: Object.keys(profilePatch),
+        auth_fields: Object.keys(authPatch).map((k) => (k === 'password' ? 'password(changed)' : k)),
+      },
+    },
+    clientIp(request)
+  );
 
   return NextResponse.json({ ok: true, id });
 }

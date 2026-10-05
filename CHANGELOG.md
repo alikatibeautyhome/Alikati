@@ -1276,3 +1276,75 @@ vulnerable range, while the app's own copy was patched. Pinned by override; `0 v
   security gain is small, since PostgREST parameterises every query and there is no raw SQL here.
 
 ---
+
+## v2.1.0 — The v2.0 limitations, worked through (2026-10-06)
+
+v2.0.0 listed six limitations rather than leaving them implied. This closes the ones that are code,
+and states plainly why three are not.
+
+### 1. No audit trail — built
+
+The console can read every customer's name, phone and address, change prices, and create staff
+accounts, and until now none of it left a trace. There was no way to detect misuse, and with a shared
+console a wrong price was an argument rather than a fact.
+
+`security_events` (migration 0028) records who did what, from where. Three properties make it
+evidence rather than a summary:
+
+- **Append-only, enforced.** UPDATE and DELETE are revoked from every role *and* rejected by a
+  trigger — including for the service role, which is precisely the key a script would use to cover
+  its tracks. Verified: both operations returned `42501 security_events is append-only`.
+- **The browser cannot name the actor.** Client-side events go through `log_security_event`, a
+  SECURITY DEFINER function that takes the actor from `auth.uid()`. A client can say what happened;
+  it cannot forge an entry against another account.
+- **No password values, ever.** A password change is recorded by field *name* only. Verified by
+  reading the code path, not assumed.
+
+Staff creation, role and password changes, and both MFA events are wired. Read-only viewer at
+`/admin/audit`, with no delete control — because the table would refuse it anyway.
+
+### 4. Rate limits were per-instance — moved into Postgres
+
+The counter lived in a module Map: a deploy reset it to zero, and two instances each allowed the full
+quota — so the real limit was the advertised limit times however many instances the platform had
+spawned, which scales up exactly when traffic is high. The count now lives in `rate_limit_counters`
+(migration 0029), incremented by one atomic `INSERT ... ON CONFLICT DO UPDATE`. Read-then-write would
+race; a single statement is serialised per row by Postgres.
+
+Measured, not assumed: **50 concurrent calls against a limit of 10 produced exactly 10 allowed and 40
+blocked**, and a live 26-request burst gave 20 allowed / 6 blocked with the counter visible in the
+table as one shared row — cross-instance by construction, not by configuration.
+
+If the database call fails it falls back to the in-memory limiter rather than failing open (the
+control silently disappears) or closed (a database blip becomes an outage of ordering and booking).
+The fallback is weaker than the shared counter and far stronger than nothing, and it logs.
+
+### 5b. No tested restore — now tested
+
+`scripts/backup-restore-test.py` exports every application table, rebuilds each one in a scratch
+schema with `INCLUDING ALL` (so constraints and indexes come too), re-inserts every row via
+`jsonb_populate_recordset`, compares counts table by table, and drops the schema.
+
+Latest run: **20 tables, 129 rows, 0 mismatches, scratch schema removed.** A tested backup, not an
+assumed one. Restoring into a scratch schema rather than over the live tables is the point — the test
+must not be able to cause the outage it is insurance against.
+
+### Still open, and why
+
+- **Session cookies are not HttpOnly.** Not an oversight, and not fixable in isolation. The browser
+  client must read the token to attach it to Supabase requests, so an HttpOnly cookie would simply
+  break authentication. Fixing it means moving every data access to the server — a rewrite of the
+  console, not a patch.
+- **`script-src` still allows `'unsafe-inline'`.** Removing it needs per-request nonces, which forces
+  every page to render dynamically and gives up the ISR the shop depends on. The mechanism is
+  verifiable — I can confirm every `<script>` carries a nonce matching the header — but whether the
+  browser then *executes* Next's chunk loader correctly cannot be checked from a terminal. Shipping
+  that blind risks a site that renders but is not interactive, so it waits for a browser check.
+- **Not deployed.** No host exists, which is also why production secrets still sit in gitignored local
+  files. Nothing in code can fix this; it needs a hosting account.
+- **No schema validation library.** Routes validate by hand across 13 field-error assignments. Worth
+  doing for maintainability, but there is no security gain to claim: PostgREST parameterises every
+  query and there is no raw SQL in the application, so SQL injection is structurally impossible, and
+  React's escaping plus the CSP handle XSS.
+
+---

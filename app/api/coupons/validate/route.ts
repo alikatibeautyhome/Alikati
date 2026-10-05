@@ -23,6 +23,7 @@ export const dynamic = 'force-dynamic';
  * someone enumerating codes, not against honest typos.
  */
 const rateLimited = createRateLimiter({
+  bucket: 'coupons',
   limit: Number(process.env.COUPON_RATE_LIMIT_PER_MIN ?? 20),
 });
 
@@ -36,7 +37,7 @@ const invalid = (reason: string): CouponPreview => ({
 });
 
 export async function POST(request: NextRequest) {
-  if (rateLimited(clientIp(request))) {
+  if (await rateLimited(clientIp(request))) {
     return NextResponse.json<CouponPreview>(invalid('Too many attempts. Please wait a minute.'), {
       status: 429,
     });

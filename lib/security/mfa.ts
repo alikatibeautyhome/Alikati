@@ -29,6 +29,33 @@ import { isDemoMode } from '@/lib/supabase/config';
  * code change.
  */
 
+/**
+ * Write an entry to the security log from the browser.
+ *
+ * Uses the `log_security_event` database function rather than inserting directly, because that
+ * function takes the actor **from the session**. A browser can say what happened; it cannot say who
+ * did it, so it cannot forge an entry naming another account. Best-effort on purpose — failing to
+ * log must never turn a successful security action into an error the operator sees.
+ */
+async function logSecurityEvent(
+  action: string,
+  summary: string,
+  metadata: Record<string, unknown> = {}
+): Promise<void> {
+  if (isDemoMode()) return;
+  try {
+    await getSupabaseBrowserClient().rpc('log_security_event', {
+      p_action: action,
+      p_summary: summary,
+      p_entity: 'profiles',
+      p_entity_id: null,
+      p_metadata: metadata,
+    });
+  } catch {
+    // The action itself already succeeded; the log is secondary.
+  }
+}
+
 export interface MfaStatus {
   /** True when the account has at least one verified TOTP factor. */
   enrolled: boolean;
@@ -155,6 +182,7 @@ export async function confirmTotpEnrolment(
     };
   }
 
+  await logSecurityEvent('mfa.enrolled', 'Turned on two-factor authentication');
   return { ok: true };
 }
 
@@ -180,5 +208,7 @@ export async function removeTotpFactor(
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase.auth.mfa.unenroll({ factorId });
   if (error) return { ok: false, error: 'Could not turn off two-factor authentication.' };
+  // Turning a security control OFF is at least as worth recording as turning it on.
+  await logSecurityEvent('mfa.disabled', 'Turned off two-factor authentication');
   return { ok: true };
 }

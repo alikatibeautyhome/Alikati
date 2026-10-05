@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
  * ordering.
  */
 const rateLimited = createRateLimiter({
+  bucket: 'reviews',
   limit: Number(process.env.REVIEW_RATE_LIMIT_PER_MIN ?? 3),
 });
 
@@ -30,7 +31,7 @@ const rateLimited = createRateLimiter({
  * the id; it only needs to know the review was accepted.
  */
 export async function POST(request: NextRequest) {
-  if (rateLimited(clientIp(request))) {
+  if (await rateLimited(clientIp(request))) {
     return NextResponse.json<ReviewSubmitResult>(
       { ok: false, error: 'Too many reviews from this connection. Please try again in a minute.' },
       { status: 429 }

@@ -12,13 +12,16 @@ export const dynamic = 'force-dynamic';
 
 /** One booking per customer is the norm; five a minute leaves room for a family booking together. */
 const rateLimited = createRateLimiter({
+  bucket: 'booking',
   limit: Number(process.env.BOOKING_RATE_LIMIT_PER_MIN ?? 5),
 });
 
 export async function POST(request: NextRequest) {
   const ip = clientIp(request);
 
-  if (rateLimited(ip)) {
+  // The counter now lives in Postgres, so this is a network call and must be awaited — without the
+  // await the promise is always truthy and every booking would be rejected.
+  if (await rateLimited(ip)) {
     return NextResponse.json<BookingResult>(
       { ok: false, error: 'Too many requests. Please try again in a minute.' },
       { status: 429 }
