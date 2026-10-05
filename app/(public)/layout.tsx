@@ -10,6 +10,7 @@ import { watermarkConfigFromSettings } from '@/lib/watermark';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { AuthProvider } from '@/components/account/AuthProvider';
+import { serializeJsonLd } from '@/lib/security/json-ld';
 
 /**
  * Public shell for the storefront and marketing site.
@@ -90,7 +91,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(businessSchema) }}
         />
       </AuthProvider>
     </CartProvider>

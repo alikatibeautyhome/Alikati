@@ -7,6 +7,8 @@ import { lookupOrder } from '@/lib/shop-api';
 import { createOrderNotificationLink } from '@/lib/whatsapp';
 import { isValidNepaliPhone } from '@/lib/utils';
 import { PAYMENT_METHOD_LABELS } from '@/lib/commerce';
+import { clientIp } from '@/lib/security/client-ip';
+import { createRateLimiter } from '@/lib/security/rate-limit';
 import type { OrderResult, PaymentMethod } from '@/types/commerce.types';
 
 export const dynamic = 'force-dynamic';
@@ -25,27 +27,14 @@ function sanitizeProofKey(value: unknown): string | null {
   return raw;
 }
 
-const RATE_LIMIT = Number(process.env.ORDER_RATE_LIMIT_PER_MIN ?? 8);
 const MAX_LINES = 25;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    hits.set(ip, { count: 1, resetAt: now + 60_000 });
-    if (hits.size > 5000) {
-      for (const [key, value] of hits) if (value.resetAt < now) hits.delete(key);
-    }
-    return false;
-  }
-
-  entry.count += 1;
-  return entry.count > RATE_LIMIT;
-}
+/** Ordering is the most valuable thing to a script and the least forgivable to lose, so it is the
+ *  tightest limit — a genuine customer places one order, not eight. */
+const rateLimited = createRateLimiter({
+  limit: Number(process.env.ORDER_RATE_LIMIT_PER_MIN ?? 8),
+});
 
 /** Turns the SQL `place_order()` exceptions into messages a customer can act on. */
 function mapPlacementError(raw: string): { status: number; message: string } {
@@ -94,9 +83,7 @@ function mapPlacementError(raw: string): { status: number; message: string } {
 /* ────────────────────────────────────────────────────────────────── POST ── */
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-
-  if (rateLimited(ip)) {
+  if (rateLimited(clientIp(request))) {
     return NextResponse.json<OrderResult>(
       { ok: false, error: 'Too many attempts. Please try again in a minute.' },
       { status: 429 }

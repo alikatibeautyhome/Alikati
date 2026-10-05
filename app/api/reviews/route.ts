@@ -2,36 +2,19 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isDemoMode } from '@/lib/supabase/config';
 import type { ReviewSubmitResult } from '@/types/reviews.types';
+import { clientIp } from '@/lib/security/client-ip';
+import { createRateLimiter } from '@/lib/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const RATE_LIMIT = Number(process.env.REVIEW_RATE_LIMIT_PER_MIN ?? 3);
-
 /**
- * Per-instance rate limiter, mirroring `app/api/booking/route.ts`.
- *
  * A review is held for moderation, so the abuse this guards against is flooding the owner's
- * approval queue rather than anything reaching the public page. Same caveat as booking: swap the
- * Map for Upstash/Redis if traffic ever justifies it.
+ * approval queue rather than anything reaching the public page — which is why it is tighter than
+ * ordering.
  */
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    hits.set(ip, { count: 1, resetAt: now + 60_000 });
-    // Opportunistic cleanup so the map cannot grow without bound.
-    if (hits.size > 5000) {
-      for (const [key, value] of hits) if (value.resetAt < now) hits.delete(key);
-    }
-    return false;
-  }
-
-  entry.count += 1;
-  return entry.count > RATE_LIMIT;
-}
+const rateLimited = createRateLimiter({
+  limit: Number(process.env.REVIEW_RATE_LIMIT_PER_MIN ?? 3),
+});
 
 /**
  * Accepts a customer review.
@@ -47,9 +30,7 @@ function rateLimited(ip: string): boolean {
  * the id; it only needs to know the review was accepted.
  */
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-
-  if (rateLimited(ip)) {
+  if (rateLimited(clientIp(request))) {
     return NextResponse.json<ReviewSubmitResult>(
       { ok: false, error: 'Too many reviews from this connection. Please try again in a minute.' },
       { status: 429 }

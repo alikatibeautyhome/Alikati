@@ -3,6 +3,8 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isDemoMode } from '@/lib/supabase/config';
 import { demoCommerceDb } from '@/lib/demo-commerce';
 import type { CouponPreview } from '@/types/marketing.types';
+import { clientIp } from '@/lib/security/client-ip';
+import { createRateLimiter } from '@/lib/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,16 +18,13 @@ export const dynamic = 'force-dynamic';
  * time, so a crafted response cannot buy a discount.
  */
 
-const RATE_LIMIT = Number(process.env.COUPON_RATE_LIMIT_PER_MIN ?? 20);
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((at) => now - at < 60_000);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > RATE_LIMIT;
-}
+/**
+ * Generous, because a real shopper mistyping a code is expected behaviour — this guards against
+ * someone enumerating codes, not against honest typos.
+ */
+const rateLimited = createRateLimiter({
+  limit: Number(process.env.COUPON_RATE_LIMIT_PER_MIN ?? 20),
+});
 
 const invalid = (reason: string): CouponPreview => ({
   valid: false,
@@ -37,12 +36,7 @@ const invalid = (reason: string): CouponPreview => ({
 });
 
 export async function POST(request: NextRequest) {
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
-
-  if (rateLimited(ip)) {
+  if (rateLimited(clientIp(request))) {
     return NextResponse.json<CouponPreview>(invalid('Too many attempts. Please wait a minute.'), {
       status: 429,
     });

@@ -4,6 +4,7 @@ import { FALLBACK_CONTACT, siteUrl } from '@/lib/supabase/config';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import './globals.css';
+import { serializeJsonLd } from '@/lib/security/json-ld';
 
 const sans = Inter({
   subsets: ['latin'],
@@ -111,7 +112,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(businessSchema) }}
         />
       </body>
     </html>

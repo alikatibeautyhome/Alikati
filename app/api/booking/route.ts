@@ -5,38 +5,18 @@ import { demoDb } from '@/lib/demo-data';
 import { createWhatsAppBookingLink } from '@/lib/whatsapp';
 import { effectivePrice, isValidNepaliPhone, referenceCode } from '@/lib/utils';
 import type { BookingResult } from '@/types/database.types';
+import { clientIp } from '@/lib/security/client-ip';
+import { createRateLimiter } from '@/lib/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const RATE_LIMIT = Number(process.env.BOOKING_RATE_LIMIT_PER_MIN ?? 5);
-
-/**
- * Per-instance rate limiter.
- *
- * Adequate for a single salon deployment on one or two serverless instances. If traffic ever
- * justifies it, swap the Map for Upstash Redis / Vercel KV with the same interface.
- */
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    hits.set(ip, { count: 1, resetAt: now + 60_000 });
-    // Opportunistic cleanup so the map cannot grow without bound.
-    if (hits.size > 5000) {
-      for (const [key, value] of hits) if (value.resetAt < now) hits.delete(key);
-    }
-    return false;
-  }
-
-  entry.count += 1;
-  return entry.count > RATE_LIMIT;
-}
+/** One booking per customer is the norm; five a minute leaves room for a family booking together. */
+const rateLimited = createRateLimiter({
+  limit: Number(process.env.BOOKING_RATE_LIMIT_PER_MIN ?? 5),
+});
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = clientIp(request);
 
   if (rateLimited(ip)) {
     return NextResponse.json<BookingResult>(

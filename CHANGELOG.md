@@ -1041,3 +1041,55 @@ the category uploader are verified by build, TypeScript and the shape of the wri
 not by clicking, since no browser is available here. (3) The sitemap advertises
 `loose-recovered-checked-brass.trycloudflare.com`, a tunnel URL from an earlier session. That is
 environment-driven and predates this change, but it is worth setting a real domain.
+
+## v1.24 — Security hardening (2026-10-06)
+
+Audited the whole app against a running build before adding anything — response headers, all five
+public API routes, RLS and storage policies, and the client bundles themselves. One exploitable
+finding, several gaps, and a number of things already done well.
+
+**Fixed: the rate limiter did not limit anything.**
+Every public write route read `x-forwarded-for` and took the *first* entry. That list is
+`client, proxy1, proxy2 …` and each hop **appends**, so the leftmost value is whatever the caller
+typed into the header. Sending `X-Forwarded-For: <random>` therefore produced a fresh bucket on
+every request and no limit ever fired — the control was decorative. All four routes now use
+`clientIp()`, which prefers edge-set headers (`cf-connecting-ip`, `x-vercel-forwarded-for`) and
+otherwise takes the **rightmost** XFF entry, the one the nearest proxy added and the caller cannot
+forge. Measured: 26 requests with a randomised left entry now yield exactly 20 allowed and 6
+rejected; before, all 26 passed.
+
+**Fixed: four copies of the rate limiter had already drifted.** Three different implementations with
+three different limits, one per route. Extracted to `lib/security/rate-limit.ts` so there is one
+control with the limit passed in, rather than four whose weakest copy was the real one.
+
+**Fixed: `/api/product-image` had no limit at all.** The most expensive endpoint the public can
+reach — an outbound fetch plus `sharp` on the server's CPU for every request. Now capped and
+documented in `.env.example`. The ceiling is deliberately high (300/min) because one catalogue page
+legitimately asks for twenty images: it stops a loop, not browsing.
+
+**Added: Content-Security-Policy, HSTS, Permissions-Policy, `X-DNS-Prefetch-Control`**, and
+`poweredByHeader: false` so responses stop advertising the framework for CVE scanning. The CSP
+blocks `object-src`, pins `base-uri` and `form-action` to self, and restricts `connect-src`/`img-src`
+— real attack classes even while `script-src` still needs `'unsafe-inline'` for Next's inline
+bootstrap. That limitation is stated in full in `next.config.mjs` rather than glossed over: removing
+it needs per-request nonces and forces every page dynamic, giving up the ISR the shop depends on.
+HSTS and `upgrade-insecure-requests` are production-only, so local `http://localhost` still works.
+
+**Added: JSON-LD escaping.** The structured-data block interpolates `salon_settings` — phone, email,
+address, social URLs, all free text from the staff console. `JSON.stringify` alone does not stop a
+value containing `</script>` from closing the block and turning the rest into markup on every public
+page. `serializeJsonLd()` escapes `<`, `>`, `&` and the U+2028/U+2029 line separators. Proven by
+writing `</script>` into the live settings row and confirming the block still parses with the value
+round-tripping exactly; the row was restored afterwards.
+
+**Added: SVG hardening.** `dangerouslyAllowSVG` was already on for the placeholder assets; the
+optimizer now also returns `Content-Disposition: attachment` and a `sandbox` CSP, so an SVG that
+ever came from an untrusted path cannot render as a document or run script.
+
+**Verified already sound, and left alone:** no service-role key in any of the 74 client bundles; RLS
+enabled on every table with no wide-open policy; `payment-proofs` correctly private while the
+catalogue buckets are public; `/api/product-image` already defended against SSRF (https-only, DNS
+resolution, private-IP block); the admin boundary returning 403 for a signed-in non-staff user.
+No regression: 83/83 pages 200, 0 broken images, 0 broken links, `tsc` and build clean.
+
+---

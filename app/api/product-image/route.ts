@@ -7,6 +7,8 @@ import sharp from 'sharp';
 // sharp declares its types as `export = sharp` with a namespace, so the composite layer type is
 // reachable through a type-only namespace import but not through the default import binding.
 import type * as Sharp from 'sharp';
+import { clientIp } from '@/lib/security/client-ip';
+import { createRateLimiter } from '@/lib/security/rate-limit';
 
 /**
  * Product-image pipeline.
@@ -37,6 +39,20 @@ import type * as Sharp from 'sharp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/**
+ * The most expensive endpoint the public can reach: every call makes an outbound HTTP request and
+ * runs the image through sharp on the server's CPU, and it was the only public route with no limit
+ * at all.
+ *
+ * The ceiling is deliberately high — one catalogue page legitimately asks for twenty images, and a
+ * shop grid asks for more — so this is not a per-page budget. It exists to stop a loop, not to ration
+ * browsing. Over the limit the request is refused rather than served, because serving it is exactly
+ * the CPU exhaustion being guarded against.
+ */
+const rateLimited = createRateLimiter({
+  limit: Number(process.env.IMAGE_RATE_LIMIT_PER_MIN ?? 300),
+});
 
 /** Regions painted out, as fractions of the image. See the geometry note above. */
 const SUPPLIER_MARKS = [
@@ -116,6 +132,13 @@ async function brandMark(width: number): Promise<Buffer> {
 }
 
 export async function GET(request: NextRequest) {
+  if (rateLimited(clientIp(request))) {
+    return new NextResponse('Too many image requests. Please slow down.', {
+      status: 429,
+      headers: { 'Retry-After': '60' },
+    });
+  }
+
   const src = request.nextUrl.searchParams.get('src');
   const formatParam = request.nextUrl.searchParams.get('format');
   const format: 'webp' | 'png' | 'jpeg' =
