@@ -87,7 +87,7 @@ const PRIVATE_IP =
   /^(?:10\.|127\.|169\.254\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|0\.|::1$|f[cd][0-9a-f]{2}:|fe80:)/i;
 
 const hostDecisions = new Map<string, boolean>();
-const logoCache = new Map<number, Buffer>();
+const logoCache = new Map<number, Buffer | null>();
 
 /**
  * Blocks server-side request forgery: only https, and only hosts that resolve to public addresses.
@@ -116,20 +116,38 @@ async function isSafeHost(hostname: string): Promise<boolean> {
   return ok;
 }
 
-/** The salon's mark, resized to the width this image needs and cached across requests. */
-async function brandMark(width: number): Promise<Buffer> {
+/**
+ * The salon's mark, resized to the width this image needs and cached across requests.
+ *
+ * Returns `null` rather than throwing when the file cannot be read, and that matters more than it
+ * looks: this route is the image pipeline for the entire shop, so an exception here would turn one
+ * missing asset into a site with no product photography at all. A watermark is decoration — if it
+ * cannot be applied, the right answer is an image without it, not a broken image.
+ *
+ * The file *is* present in the serverless bundle: Next traces the `fs.readFile` and lists
+ * `public/brand/abh-logo.png` in this route's `.nft.json` manifest, so it works on Vercel. This guard
+ * covers everything that manifest cannot promise — a refactor that breaks the trace, a corrupted
+ * file, a build made without the asset.
+ */
+async function brandMark(width: number): Promise<Buffer | null> {
   const key = Math.round(width);
   const cached = logoCache.get(key);
-  if (cached) return cached;
+  // `!== undefined` rather than truthiness, so a cached *absence* is honoured instead of retried.
+  if (cached !== undefined) return cached;
 
-  const file = path.join(process.cwd(), 'public', 'brand', 'abh-logo.png');
-  const buffer = await sharp(await fs.readFile(file))
-    .resize({ width: key, fit: 'inside' })
-    .png()
-    .toBuffer();
-
-  logoCache.set(key, buffer);
-  return buffer;
+  try {
+    const file = path.join(process.cwd(), 'public', 'brand', 'abh-logo.png');
+    const buffer = await sharp(await fs.readFile(file))
+      .resize({ width: key, fit: 'inside' })
+      .png()
+      .toBuffer();
+    logoCache.set(key, buffer);
+    return buffer;
+  } catch (error) {
+    logoCache.set(key, null);
+    console.error('[product-image] brand mark unavailable, serving without it:', error);
+    return null;
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -294,11 +312,14 @@ export async function GET(request: NextRequest) {
     if (markRequested) {
       const logoWidth = Math.max(24, Math.round(width * BRAND_MARK.w));
       const logo = await brandMark(logoWidth);
-      layers.push({
-        input: logo,
-        top: Math.round(height * BRAND_MARK.y),
-        left: Math.round(width * BRAND_MARK.x),
-      });
+      // Skipped entirely when unavailable — the image is composited without it rather than failing.
+      if (logo) {
+        layers.push({
+          input: logo,
+          top: Math.round(height * BRAND_MARK.y),
+          left: Math.round(width * BRAND_MARK.x),
+        });
+      }
     }
 
     // The canvas starts white, so a source with transparency lands on white rather than black.

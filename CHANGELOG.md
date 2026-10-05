@@ -1348,3 +1348,46 @@ must not be able to cause the outage it is insurance against.
   React's escaping plus the CSP handle XSS.
 
 ---
+
+## v2.2.0 — Deployment readiness, and a health check that tells the truth (2026-10-06)
+
+Prepared for hosting on Vercel. The code needed two changes; most of what makes a deployment fail
+lives in dashboards this repository cannot reach, so the deliverable is a diagnostic plus a runbook.
+
+**`/api/health` — a deployment that can describe its own problems.** "The site has Supabase errors"
+is not actionable. Opening this endpoint on the deployment returns a specific list: which environment
+variable is missing, whether the database is reachable, which migrations have not been applied, which
+buckets are absent, and whether row-level security is on. It never returns a secret's value (only
+whether one is present) and never passes a raw library or database error through, because health
+endpoints are routinely public. Returns 200, or 503 with the failing checks.
+
+**It was wrong, and finding out why mattered.** The first version probed for each function by POSTing
+to `/rest/v1/rpc/<name>` with an empty body and treated a 404 as "missing". It reported four functions
+as absent that were demonstrably present — PostgREST also answers 404 for a *signature* mismatch, and
+`place_order` called with no arguments is not a function it can resolve. A diagnostic that sends an
+operator chasing a problem that does not exist is worse than no diagnostic. Migration 0030 adds
+`health_check()`, which reads `pg_proc` and `information_schema` directly and cannot be fooled by
+argument shapes. Verified by hiding a required function and confirming the endpoint flips to 503 with
+that function named — then restoring it.
+
+**Image pipeline resilience.** `brandMark()` reads the salon logo from disk. My first instinct was
+that this breaks on Vercel, and I was wrong: Next traces the `fs.readFile` and lists
+`public/brand/abh-logo.png` in the route's `.nft.json` manifest, so it ships. Worth recording that the
+check prevented a no-op "fix" being reported as one. What *is* real: the read had no error handling,
+so any failure would 500 the route and take down product photography across the whole site. It now
+degrades — the image is composited without the watermark and the failure is logged — and the absent
+mark is cached so a missing file is not retried on every request.
+
+**`docs/DEPLOY.md`** covers the four things that actually break these deployments: the environment
+variables (including why `SUPABASE_SERVICE_ROLE_KEY` must never carry the `NEXT_PUBLIC_` prefix),
+Supabase's auth URL allow-list — the usual cause of "login just fails" on a new domain, and notably
+the Vercel preview pattern that stops every preview deployment from authenticating — applying the
+migrations to the project being deployed against, and a symptom-to-cause table.
+
+**Also:** `.env.example` no longer ships `NEXT_PUBLIC_SITE_URL=http://localhost:3000`, which would
+have published localhost in the sitemap of anyone who copied it unedited.
+
+Verified: tsc clean, build clean, 7/7 security-audit checks, 78/78 pages, 0 broken images, 0 broken
+links, `/api/health` reporting 0 failures against the live database.
+
+---

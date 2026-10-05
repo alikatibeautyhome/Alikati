@@ -12,6 +12,9 @@ stock, orders and customers**.
 
 ---
 
+> Deploying? Read [docs/DEPLOY.md](docs/DEPLOY.md) first — it covers the Vercel
+> environment variables, the Supabase auth URL settings, and what each failure means.
+
 ## 1. Quick start (no Supabase needed)
 
 The site ships with **demo mode**. With no environment variables set, every screen renders
