@@ -7,6 +7,7 @@ import sharp from 'sharp';
 // sharp declares its types as `export = sharp` with a namespace, so the composite layer type is
 // reachable through a type-only namespace import but not through the default import binding.
 import type * as Sharp from 'sharp';
+import { cleanProductBackground, frameProductSquare } from '@/lib/images/background';
 import { clientIp } from '@/lib/security/client-ip';
 import { createRateLimiter } from '@/lib/security/rate-limit';
 
@@ -55,25 +56,18 @@ const rateLimited = createRateLimiter({
   limit: Number(process.env.IMAGE_RATE_LIMIT_PER_MIN ?? 300),
 });
 
-/** Regions painted out, as fractions of the image. See the geometry note above. */
-const SUPPLIER_MARKS = [
-  { x: 0.64, y: 0.01, w: 0.36, h: 0.14, label: 'top-right mark' },
-  { x: 0.0, y: 0.82, w: 0.34, h: 0.18, label: 'bottom-left mark' },
-];
-
-/** The salon's mark, bottom-left — position and size taken from the owner's approved sample. */
-const BRAND_MARK = { x: 0.045, y: 0.745, w: 0.255 };
-
 /**
- * How square an image must be for the boxes above to apply.
+ * The salon's mark, as a fraction of the finished canvas — sized and placed to sit **inside the white
+ * margin** that `frameProductSquare` guarantees.
  *
- * Those fractions describe the supplier's **packshots**, which are all 1080² or 1600². The
- * catalogue also contains 19 wide banner-shaped images (327×150) whose marks sit somewhere else
- * entirely — for those the same boxes would erase real content *and* miss the mark, which is the
- * worst available outcome. So the geometry is applied only where it was measured, and the rest keep
- * their source untouched apart from the white canvas and the mark.
+ * It used to be positioned as a fraction of the *product* frame, which meant it landed on the product
+ * whenever the product reached the lower-left. It is now anchored to the canvas edge instead, so the
+ * margin — not luck — is what keeps it clear of the artwork. `BRAND_MARK_SIZE` plus
+ * `BRAND_MARK_INSET` must stay below the frame's margin fraction (about 11.5% of the canvas) for that
+ * guarantee to hold.
  */
-const SQUARE_TOLERANCE = 0.15;
+const BRAND_MARK_SIZE = 0.08;
+const BRAND_MARK_INSET = 0.015;
 
 /** `PRODUCT_IMAGE_STRIP_WATERMARK=off` disables step 2 without a code change. */
 const STRIP_WATERMARK = (process.env.PRODUCT_IMAGE_STRIP_WATERMARK ?? 'on').toLowerCase() !== 'off';
@@ -277,29 +271,23 @@ export async function GET(request: NextRequest) {
       .linear(1.03, -4)
       .toBuffer();
 
-    const meta = await sharp(tuned).metadata();
+    /*
+      White background, then framing.
+
+      Both happen here rather than as a batch job so a newly added product is corrected on its first
+      render without anyone remembering to run anything. See lib/images/background.ts for why each step
+      exists; the short version is that `flatten()` alone only fills transparency, so a photograph taken
+      on a black or cream sweep arrived on the page still black or cream, and the product's own frame
+      gave the badge nowhere to sit but on top of it.
+    */
+    const cleaned = await cleanProductBackground(tuned, { stripMarks: stripMarks });
+    const framed = await frameProductSquare(cleaned.buffer);
+
+    const meta = await sharp(framed).metadata();
     const width = meta.width!;
     const height = meta.height!;
 
     const layers: Sharp.OverlayOptions[] = [];
-    const isPackshot = Math.abs(width / height - 1) <= SQUARE_TOLERANCE;
-
-    if (stripMarks && isPackshot) {
-      for (const mark of SUPPLIER_MARKS) {
-        layers.push({
-          input: {
-            create: {
-              width: Math.max(1, Math.round(width * mark.w)),
-              height: Math.max(1, Math.round(height * mark.h)),
-              channels: 4,
-              background: '#ffffff',
-            },
-          },
-          top: Math.round(height * mark.y),
-          left: Math.round(width * mark.x),
-        });
-      }
-    }
 
     /**
      * `?mark=off` omits the salon's own mark.
@@ -310,14 +298,18 @@ export async function GET(request: NextRequest) {
      * request the image without the flag and keep the baked mark.
      */
     if (markRequested) {
-      const logoWidth = Math.max(24, Math.round(width * BRAND_MARK.w));
+      const logoWidth = Math.max(24, Math.round(width * BRAND_MARK_SIZE));
       const logo = await brandMark(logoWidth);
       // Skipped entirely when unavailable — the image is composited without it rather than failing.
       if (logo) {
+        const logoBox = await sharp(logo).metadata();
+        const logoHeight = logoBox.height ?? logoWidth;
+        const inset = Math.round(height * BRAND_MARK_INSET);
         layers.push({
           input: logo,
-          top: Math.round(height * BRAND_MARK.y),
-          left: Math.round(width * BRAND_MARK.x),
+          // Anchored to the bottom-left of the canvas, which is white margin, not product.
+          top: Math.max(0, height - inset - logoHeight),
+          left: Math.round(width * BRAND_MARK_INSET),
         });
       }
     }
@@ -336,7 +328,7 @@ export async function GET(request: NextRequest) {
         create: { width, height, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
         // `tuned`, not `working`: the colour pass above has already run, and the marks are sized
         // against the same dimensions, so compositing on the tuned buffer keeps everything aligned.
-      }).composite([{ input: tuned, top: 0, left: 0 }, ...layers]);
+      }).composite([{ input: framed, top: 0, left: 0 }, ...layers]);
 
     const output =
       format === 'png'
