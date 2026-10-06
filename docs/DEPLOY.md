@@ -22,7 +22,7 @@ number of "it didn't apply" reports are exactly this.
 | `NEXT_PUBLIC_SUPABASE_URL` | yes — ships to the browser | Supabase → Project Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes — ships to the browser | …→ API → `anon` `public` key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **NO — server only** | …→ API → `service_role` key |
-| `NEXT_PUBLIC_SITE_URL` | yes | This deployment's own URL, e.g. `https://alikatibeautyhome.com`. Without it the sitemap and Open Graph tags fall back to `https://alikatibeautyhome.com`. Never point it at a preview or tunnel URL. |
+| `NEXT_PUBLIC_SITE_URL` | yes | This deployment's own URL, e.g. `https://www.alikatibeautyhome.com.np`. Without it the sitemap and Open Graph tags fall back to `https://www.alikatibeautyhome.com.np`. Never point it at a preview or tunnel URL. |
 
 ### Optional
 

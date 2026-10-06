@@ -1399,7 +1399,7 @@ Example `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>   # server only, never committed
-NEXT_PUBLIC_SITE_URL=https://alikatibeautyhome.com
+NEXT_PUBLIC_SITE_URL=https://www.alikatibeautyhome.com.np
 NEXT_PUBLIC_WHATSAPP_NUMBER=9779800000000
 BOOKING_RATE_LIMIT_PER_MIN=5
 ```

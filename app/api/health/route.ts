@@ -88,7 +88,7 @@ export async function GET(): Promise<NextResponse> {
     status: siteUrl ? 'ok' : 'warn',
     detail: siteUrl
       ? `set to ${siteUrl}`
-      : 'not set — falling back to https://alikatibeautyhome.com for the sitemap and Open Graph tags. Set it if this deployment serves a different domain.',
+      : 'not set — falling back to https://www.alikatibeautyhome.com.np for the sitemap and Open Graph tags. Set it if this deployment serves a different domain.',
   });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

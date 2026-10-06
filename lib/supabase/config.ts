@@ -46,7 +46,7 @@ export const DEMO_CUSTOMER = {
 } as const;
 
 /** The shop's real origin, used when no override is configured. */
-const CANONICAL_ORIGIN = 'https://alikatibeautyhome.com';
+const CANONICAL_ORIGIN = 'https://www.alikatibeautyhome.com.np';
 
 /**
  * Canonical site URL used for metadata, sitemap and Open Graph tags.
