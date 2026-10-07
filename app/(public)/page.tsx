@@ -27,9 +27,11 @@ import { formatNPR } from '@/lib/utils';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: { absolute: 'Alikati Beauty Home — Salon, Bridal Studio & Academy in Attariya' },
+  // `absolute`, not a plain string: the root layout appends " | Alikati Beauty Home" to any plain
+  // title, and this one already ends with the brand — it would render twice and overflow the SERP.
+  title: { absolute: 'Alikati Beauty Home | Salon, Bridal Studio & Shop Attariya' },
   description:
-    'Hair, bridal, nail and skin services plus professional beautician courses at Mahendranagar Road, Attariya Chowk, Kailali. See our price list in NPR and book in a minute.',
+    'Visit Alikati Beauty Home at Attariya Chowk, Kailali. Book expert hair, skin, and bridal makeup services, or order genuine salon-grade beauty products online.',
 };
 
 /**

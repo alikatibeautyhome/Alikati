@@ -11,11 +11,20 @@ import { formatPhoneDisplay, normalizeWhatsAppNumber, to12Hour } from '@/lib/uti
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: 'Visit Us in Attariya Chowk',
-  description:
-    'Find Alikati Beauty Home on Mahendranagar Road, Attariya Chowk, Kailali. Opening hours, tap-to-call, WhatsApp and directions. नमस्ते — we would love to see you.',
-};
+/**
+ * Generated rather than static so the phone number in the description stays true.
+ *
+ * The number lives in `salon_settings` and is editable from the console. Writing it into a static
+ * metadata object would mean the description silently advertises an old number the first time it
+ * changes — the kind of drift nobody notices until a customer calls it.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSalonSettings();
+  return {
+    title: { absolute: 'Contact & Visit Alikati Beauty Home | Attariya Chowk' },
+    description: `Get in touch with Alikati Beauty Home in Attariya Chowk, Kailali. Call ${formatPhoneDisplay(settings.phone)} for appointment bookings, parlor directions, and product inquiries.`,
+  };
+}
 
 const MAP_SRC =
   'https://www.google.com/maps?q=Attariya%20Chowk%2C%20Kailali%2C%20Nepal&output=embed';
@@ -36,7 +45,9 @@ export default async function ContactPage() {
         <div className="container">
           <header className="mx-auto max-w-2xl space-y-3 text-center">
             <p className="eyebrow">Contact</p>
-            <h1 className="font-display text-3xl text-charcoal sm:text-4xl">Come say नमस्ते</h1>
+            <h1 className="font-display text-3xl text-charcoal sm:text-4xl">
+              Contact Alikati Beauty Home in Attariya Chowk
+            </h1>
             <p className="text-charcoal-soft">
               We are on Mahendranagar Road at Attariya Chowk, Kailali. Call, message on WhatsApp, or send
               us a note below.

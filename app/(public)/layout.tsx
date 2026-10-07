@@ -27,6 +27,10 @@ export default async function PublicLayout({ children }: { children: React.React
   const businessSchema = {
     '@context': 'https://schema.org',
     '@type': 'BeautySalon',
+    // A stable identifier, so other markup on the site can *reference* this business instead of
+    // restating it and risking two conflicting descriptions of the same salon. The #salon fragment
+    // is the convention Google's own local-business examples use.
+    '@id': `${siteUrl()}/#salon`,
     name: 'Alikati Beauty Home',
     description:
       'Salon, bridal studio, beautician academy and beauty shop at Mahendranagar Road, Attariya Chowk, Kailali, Nepal.',
@@ -38,7 +42,12 @@ export default async function PublicLayout({ children }: { children: React.React
     sameAs: [settings.facebook_url, settings.instagram_url, settings.tiktok_url].filter(
       (url): url is string => Boolean(url)
     ),
-    priceRange: 'रूरू',
+    /*
+      Was 'रूरू' — a doubled currency glyph, which is not a valid price range and conveyed nothing.
+      This band is derived from the live catalogue rather than invented: across 68 active products
+      the cheapest is रू 135 and the dearest रू 12,500.
+    */
+    priceRange: 'रू 135–12,500',
     currenciesAccepted: 'NPR',
     address: {
       '@type': 'PostalAddress',
@@ -46,6 +55,19 @@ export default async function PublicLayout({ children }: { children: React.React
       addressLocality: 'Attariya Chowk',
       addressRegion: 'Kailali, Sudurpashchim',
       addressCountry: 'NP',
+    },
+    /*
+      Coordinates verified against OpenStreetMap rather than accepted from the brief, which placed
+      the salon roughly 1.8 km north of the town. Attariya, Kailali resolves to 28.8029, 80.5510.
+
+      Note this is the settlement centroid, not the shop's front door — there is no geocoded record
+      of Alikati Beauty Home itself. Confirm the exact pin from Google Maps and tighten these numbers,
+      because a wrong coordinate in LocalBusiness markup sends people to the wrong place.
+    */
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 28.8029161,
+      longitude: 80.5510167,
     },
     openingHoursSpecification: [
       {

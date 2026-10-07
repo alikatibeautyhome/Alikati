@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
-import { FALLBACK_CONTACT, siteUrl } from '@/lib/supabase/config';
+import { siteUrl } from '@/lib/supabase/config';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import './globals.css';
-import { serializeJsonLd } from '@/lib/security/json-ld';
 
 const sans = Inter({
   subsets: ['latin'],
@@ -63,41 +62,21 @@ export const viewport: Viewport = {
  */
 const themeBootstrap = `(function(){try{var k='abh-theme';var s=localStorage.getItem(k);var dark=s==='dark'||((!s||s==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.classList.toggle('dark',dark);r.dataset.theme=dark?'dark':'light';}catch(e){}})();`;
 
-/** Static business schema — the settings-driven variant is emitted by the public layout. */
-const businessSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'BeautySalon',
-  name: 'Alikati Beauty Home',
-  description:
-    'Salon, bridal studio and beautician academy serving Attariya Chowk and the wider Kailali district.',
-  url: siteUrl(),
-  telephone: FALLBACK_CONTACT.phone,
-  priceRange: 'रूरू',
-  currenciesAccepted: 'NPR',
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Mahendranagar Road, Attariya Chowk',
-    addressLocality: 'Kailali',
-    addressRegion: 'Sudurpashchim',
-    addressCountry: 'NP',
-  },
-  openingHoursSpecification: [
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-      ],
-      opens: '08:00',
-      closes: '19:00',
-    },
-  ],
-};
+/*
+  There is no business schema here any more, on purpose.
+
+  This file used to emit a static `BeautySalon` block as a fallback, with a comment saying the
+  settings-driven variant lived in the public layout. Both rendered — the public layout is *inside*
+  this one — so every public page carried two conflicting descriptions of the same business: one
+  with live opening hours and one frozen at 08:00–19:00; one with a real price range and one with
+  'रूरू'. Two LocalBusiness blocks disagreeing about the same @id is worse than one incomplete
+  block, because a crawler has to choose.
+
+  The public layout's copy is the one that survives: it reads phone, address and hours from
+  salon_settings, so editing them in the console updates the markup, and it carries the @id the
+  rest of the site can point at. Nothing is lost by dropping this — the only routes not covered by
+  the public layout are /admin and /login, and a beauty salon is not the subject of either.
+*/
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -110,10 +89,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ServiceWorkerRegister />
           {children}
         </ThemeProvider>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(businessSchema) }}
-        />
       </body>
     </html>
   );

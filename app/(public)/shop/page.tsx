@@ -6,9 +6,9 @@ import type { ProductQuery, ProductUseType } from '@/types/commerce.types';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Shop Beauty Products',
+  title: { absolute: 'Buy Original Cosmetics & Salon Products | Alikati Shop' },
   description:
-    'Salon-grade skincare, makeup, hair care and tools at Alikati Beauty Home, Attariya Chowk. Every price is in Nepali rupees (रू), with delivery in Attariya, Mahendranagar, Dhangadhi and across Kailali.',
+    'Shop 100% genuine skincare, cosmetics, and haircare online. Fast delivery across Attariya and Kailali with cash on delivery and easy 7-day returns guaranteed.',
   alternates: { canonical: '/shop' },
 };
 
@@ -78,7 +78,7 @@ export default async function ShopPage({
           <header className="mx-auto max-w-2xl space-y-3 text-center">
             <p className="eyebrow">Shop</p>
             <h1 className="font-display text-3xl text-charcoal sm:text-4xl">
-              Beauty products, priced in NPR
+              Stylist-Tested Skincare, Haircare &amp; Beauty Products
             </h1>
             <p className="text-charcoal-soft">
               नमस्ते! The same salon-grade skincare, makeup and hair care our stylists use — now

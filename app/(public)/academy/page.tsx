@@ -7,9 +7,13 @@ import { formatPhoneDisplay } from '@/lib/utils';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Beautician Courses & Admission',
+  // "| Academy" rather than the full brand: with the brand suffix this title runs to 66 characters
+  // and would be truncated in the SERP.
+  title: { absolute: 'Beautician Course & Parlour Training in Attariya | Academy' },
+  // Trimmed to fit the ~160-character description budget — the source copy was 161 and lost its
+  // final clause to truncation.
   description:
-    'Professional beautician, bridal makeup and nail art courses at Alikati Academy, Attariya Chowk. Small batches, real client practice, fees from रू 22,000. Reserve your seat.',
+    'Learn hair styling, skincare, nail artistry, and bridal makeup at Alikati Beauty Academy, Attariya Chowk. Hands-on professional certification in Kailali.',
 };
 
 const STEPS = [
@@ -41,7 +45,7 @@ export default async function AcademyPage() {
           <header className="mx-auto max-w-2xl space-y-3 text-center">
             <p className="eyebrow">Alikati Academy</p>
             <h1 className="font-display text-3xl text-charcoal sm:text-4xl">
-              Become a confident, employable beautician
+              Professional Beautician Training &amp; Makeup Academy in Attariya
             </h1>
             <p className="text-charcoal-soft">
               Practical, career-focused training in small batches — taught on real clients here at our
