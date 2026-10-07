@@ -8,6 +8,16 @@ export const CONSENT_KEY = 'abh-cookie-choice';
 export type CookieChoice = 'all' | 'essential';
 
 /**
+ * Fired when the choice is made, so anything already on the page can react to it.
+ *
+ * Without this, a visitor who accepts on the page they landed on is not counted until they navigate
+ * somewhere else — the tracker only re-checks consent on a route change. Dispatching an event means
+ * the decision applies to the page it was made on, which is also the page the visitor is most
+ * likely to have come for.
+ */
+export const CONSENT_EVENT = 'abh:consent';
+
+/**
  * Cookie notice.
  *
  * "Essential only" is a real choice, not decoration: it records the preference and the app
@@ -47,6 +57,8 @@ export function CookieConsent({
       /* Private mode: the choice simply will not persist. */
     }
     setVisible(false);
+    // Outside the try: the notification matters even when the choice could not be written down.
+    window.dispatchEvent(new Event(CONSENT_EVENT));
   }
 
   if (!visible) return null;

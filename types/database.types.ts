@@ -250,3 +250,50 @@ export interface DailyKpis {
   projectedRevenue: number;
   realisedRevenue: number;
 }
+
+/** Coarse arrival bucket, used for grouping in the console. Mirrors migration 0031. */
+export type TrafficSource = 'direct' | 'search' | 'social' | 'referral' | 'affiliate';
+
+/** Coarse device class. 'unknown' covers a missing or unrecognisable user-agent. */
+export type TrafficDevice = 'mobile' | 'tablet' | 'desktop' | 'unknown';
+
+/**
+ * One page view.
+ *
+ * Deliberately carries no IP address and no user-agent string — see the header of migration 0031.
+ * `visitor_hash` is a daily-rotating salted digest computed in the API route, so it identifies a
+ * browser for one day and cannot be resolved back to an address.
+ */
+export interface TrafficEvent {
+  id: number;
+  created_at: string;
+  path: string;
+  source: TrafficSource;
+  source_detail: string | null;
+  referrer_host: string | null;
+  device: TrafficDevice;
+  browser: string | null;
+  os: string | null;
+  /** ISO-3166 alpha-2 from the platform edge, or null when the edge did not say. */
+  country: string | null;
+  /** Random per-tab value from sessionStorage. Null when storage is unavailable. */
+  session_id: string | null;
+  visitor_hash: string;
+  is_bot: boolean;
+}
+
+/** Headline figures for a window, from `public.traffic_summary`. */
+export interface TrafficSummaryRow {
+  views: number;
+  visitors: number;
+  sessions: number;
+  bounces: number;
+}
+
+/** One Nepal day, from `public.traffic_daily`. Empty days are present with zeroes. */
+export interface TrafficDailyRow {
+  day: string;
+  views: number;
+  visitors: number;
+  sessions: number;
+}

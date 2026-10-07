@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BarChart3,
   CalendarDays,
   ClipboardList,
   ExternalLink,
@@ -38,6 +39,9 @@ interface NavItem {
 /** Salon operations. */
 const SALON_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  // Sits beside the dashboard rather than in Shop because it measures the whole public site —
+  // services and academy pages as much as products.
+  { href: '/admin/traffic', label: 'Traffic', icon: BarChart3 },
   { href: '/admin/appointments', label: 'Appointments', icon: CalendarDays },
   { href: '/admin/services', label: 'Services', icon: Scissors },
   { href: '/admin/leads', label: 'Leads', icon: GraduationCap },

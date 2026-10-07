@@ -8,6 +8,7 @@ import { CartProvider } from '@/components/shop/CartProvider';
 import { WatermarkProvider } from '@/components/shop/WatermarkProvider';
 import { watermarkConfigFromSettings } from '@/lib/watermark';
 import { CookieConsent } from '@/components/site/CookieConsent';
+import { TrafficBeacon } from '@/components/site/TrafficBeacon';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { AuthProvider } from '@/components/account/AuthProvider';
 import { serializeJsonLd } from '@/lib/security/json-ld';
@@ -87,6 +88,12 @@ export default async function PublicLayout({ children }: { children: React.React
         {/* Consent first, then the install offer: they share the bottom of the screen, and the
             install prompt stays hidden until a consent choice has been made. */}
         <CookieConsent enabled={settings.cookie_notice_enabled} text={settings.cookie_notice_text} />
+
+        {/* Records a page view — but only once the visitor has accepted cookies, which is the
+            promise the consent banner makes. Mounted here because this layout renders on every
+            public page, and the public pages are exactly what is being measured. */}
+        <TrafficBeacon />
+
         <InstallPrompt enabled={settings.app_prompt_enabled} text={settings.app_prompt_text} />
 
         <script
