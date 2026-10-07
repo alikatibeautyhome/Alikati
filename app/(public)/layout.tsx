@@ -1,7 +1,7 @@
 import { getSalonSettings } from '@/lib/api';
 import { siteUrl } from '@/lib/supabase/config';
 import { AnnouncementBanner } from '@/components/public/AnnouncementBanner';
-import { NotchHeader } from '@/components/public/NotchHeader';
+import { SiteHeader } from '@/components/public/SiteHeader';
 import { SiteFooter } from '@/components/public/SiteFooter';
 import { WhatsAppFloatingButton } from '@/components/public/WhatsAppFloatingButton';
 import { CartProvider } from '@/components/shop/CartProvider';
@@ -73,7 +73,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <AnnouncementBanner settings={settings} />
         ) : null}
 
-        <NotchHeader settings={settings} />
+        <SiteHeader settings={settings} />
 
         {/* The product-image badge: the settings are read once here and handed to every card, so no
             card has to fetch anything of its own just to draw a logo. Scoped to the page content
