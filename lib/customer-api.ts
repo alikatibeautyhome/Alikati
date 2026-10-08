@@ -10,7 +10,7 @@
  * no environment variables. Passwords are never written to storage or to the console.
  */
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { DEMO_CUSTOMER, isDemoMode } from '@/lib/supabase/config';
+import { DEMO_CUSTOMER, isDemoMode, siteUrl } from '@/lib/supabase/config';
 import { demoCommerceDb } from '@/lib/demo-commerce';
 import type { Order } from '@/types/commerce.types';
 import type { CustomerProfile, CustomerProfilePatch } from '@/types/database.types';
@@ -177,11 +177,25 @@ export async function signUpCustomer(input: SignUpInput): Promise<SignUpResult> 
     return { ok: true, needsEmailConfirmation: false };
   }
 
+  /*
+    Without `emailRedirectTo`, Supabase sends the visitor to the project's Site URL — the homepage —
+    carrying a `code` that nothing consumed. Point it at the handler that exchanges the code and then
+    drops them on their account.
+
+    The origin is taken from the browser rather than `siteUrl()` where possible, so a preview
+    deployment confirms back to that same preview instead of to production. Every origin this can
+    produce is already in the project's redirect allow-list.
+  */
+  const redirectTo = `${
+    typeof window !== 'undefined' ? window.location.origin : siteUrl()
+  }/auth/confirm?next=/account`;
+
   const { data, error } = await db().auth.signUp({
     email,
     password: input.password,
     options: {
       data: { full_name, phone: phone ?? '', marketing_opt_in },
+      emailRedirectTo: redirectTo,
     },
   });
 
