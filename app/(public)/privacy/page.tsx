@@ -71,7 +71,8 @@ export default async function PrivacyPage() {
           </p>
           <p className="mt-3">
             We do not sell or rent your details. We do not store card numbers: payment is collected
-            by eSewa, Khalti or bank transfer, or in cash on delivery.
+            by bank transfer, or in cash on delivery. We never handle your card or wallet
+            credentials.
           </p>
         </section>
 

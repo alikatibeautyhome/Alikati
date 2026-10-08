@@ -82,7 +82,7 @@ export default async function ShopPage({
             </h1>
             <p className="text-charcoal-soft">
               नमस्ते! The same salon-grade skincare, makeup and hair care our stylists use — now
-              delivered to your door. Pay by cash on delivery, bank transfer, eSewa or Khalti.
+              delivered to your door. Pay by cash on delivery or bank transfer.
             </p>
           </header>
         </div>

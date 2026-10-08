@@ -8,7 +8,7 @@ const TRUST = [
   {
     icon: ShieldCheck,
     title: 'Secure Payments',
-    subtitle: 'eSewa, Khalti, bank transfer or cash on delivery.',
+    subtitle: 'Bank transfer or cash on delivery.',
   },
   {
     icon: Gift,

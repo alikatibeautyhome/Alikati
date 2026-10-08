@@ -25,8 +25,8 @@ export default async function CheckoutPage() {
             Confirm your delivery details
           </h1>
           <p className="max-w-2xl text-charcoal-soft">
-            Delivery across Kailali and beyond. Pay by cash on delivery, bank transfer, eSewa or
-            Khalti — we will confirm your order on WhatsApp.
+            Delivery across Kailali and beyond. Pay by cash on delivery or bank transfer — we will
+            confirm your order on WhatsApp.
           </p>
         </header>
 

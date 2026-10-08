@@ -2,7 +2,7 @@
  * Commerce helpers shared by the storefront and the admin console.
  * Pure functions and constant maps only — safe to import from server or client code.
  */
-import type { CartLine, CartTotals, CustomerSummary, Order, OrderStatus, PaymentMethod, PaymentStatus, Product, ProductUseType, ShopKpis } from '@/types/commerce.types';
+import type { CartLine, CartTotals, CustomerSummary, Order, OrderStatus, PaymentMethod, PaymentStatus, Product, ProductUseType, SelectablePaymentMethod, ShopKpis } from '@/types/commerce.types';
 import type { SalonSettings } from '@/types/database.types';
 
 /* ------------------------------------------------------------------- labels */
@@ -38,12 +38,27 @@ export const NEXT_ORDER_STATUS: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
+/**
+ * Labels for every value an order can carry, including the retired ones.
+ *
+ * `esewa` and `khalti` are here only so past orders read correctly. They are absent from
+ * SELECTABLE_PAYMENT_METHODS below, which is what checkout iterates, so they cannot be chosen.
+ */
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   cod: 'Cash on delivery',
   bank_transfer: 'Bank transfer',
   esewa: 'eSewa',
   khalti: 'Khalti',
 };
+
+/**
+ * The payment methods checkout offers, in the order they should appear.
+ *
+ * A single source of truth: checkout renders from this list, and the order API validates against
+ * it, so an option can never appear in the UI without the server accepting it (or vice versa).
+ * Adding a method back — mobile wallet, card — means adding it here and to PaymentMethod.
+ */
+export const SELECTABLE_PAYMENT_METHODS: SelectablePaymentMethod[] = ['cod', 'bank_transfer'];
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   unpaid: 'Unpaid',

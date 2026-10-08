@@ -15,7 +15,19 @@ export type OrderStatus =
 
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
 
+/**
+ * Every value an order may carry.
+ *
+ * `esewa` and `khalti` are retired: checkout no longer offers them and the order API rejects them
+ * for new orders (see `SelectablePaymentMethod`). They remain in this union because historical
+ * orders still carry them and the console, order confirmation and WhatsApp message all have to be
+ * able to render those records. Removing them from the type would not delete the rows — it would
+ * only make them unreadable.
+ */
 export type PaymentMethod = 'cod' | 'bank_transfer' | 'esewa' | 'khalti';
+
+/** What checkout offers, and the only values the order API accepts for a new order. */
+export type SelectablePaymentMethod = 'cod' | 'bank_transfer';
 
 export interface ProductCategory {
   id: string;

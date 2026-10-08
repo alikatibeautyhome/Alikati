@@ -6,10 +6,10 @@ import { demoDb } from '@/lib/demo-data';
 import { lookupOrder } from '@/lib/shop-api';
 import { createOrderNotificationLink } from '@/lib/whatsapp';
 import { isValidNepaliPhone } from '@/lib/utils';
-import { PAYMENT_METHOD_LABELS } from '@/lib/commerce';
+import { PAYMENT_METHOD_LABELS, SELECTABLE_PAYMENT_METHODS } from '@/lib/commerce';
 import { clientIp } from '@/lib/security/client-ip';
 import { createRateLimiter } from '@/lib/security/rate-limit';
-import type { OrderResult, PaymentMethod } from '@/types/commerce.types';
+import type { OrderResult, PaymentMethod, SelectablePaymentMethod } from '@/types/commerce.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -157,7 +157,9 @@ export async function POST(request: NextRequest) {
   if (!/^\d{1,2}$/.test(delivery_ward) || Number(delivery_ward) < 1 || Number(delivery_ward) > 32) {
     fields.delivery_ward = 'Enter the ward number (1–32).';
   }
-  if (!['cod', 'bank_transfer', 'esewa', 'khalti'].includes(payment_method)) {
+  // Validated against the same list checkout renders from, so the two cannot drift. Legacy orders
+  // may still carry esewa or khalti: those stay readable, but cannot be chosen for a new order.
+  if (!SELECTABLE_PAYMENT_METHODS.includes(payment_method as SelectablePaymentMethod)) {
     fields.payment_method = 'Choose a payment method.';
   }
   if (items.length === 0) {

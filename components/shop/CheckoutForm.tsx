@@ -32,13 +32,19 @@ import {
   DELIVERY_CITIES,
   NEPAL_DISTRICTS,
   PAYMENT_METHOD_LABELS,
+  SELECTABLE_PAYMENT_METHODS,
   deliveryFeeFor,
 } from '@/lib/commerce';
 import { getStoredReferralCode, validateCoupon } from '@/lib/marketing-api';
 import { uploadPaymentProof } from '@/lib/shop-admin-api';
 import { createCheckoutFallbackLink } from '@/lib/whatsapp';
 import { formatNPR, isValidNepaliPhone, normalizeWhatsAppNumber } from '@/lib/utils';
-import type { OrderResult, PaymentAccount, PaymentMethod } from '@/types/commerce.types';
+import type {
+  OrderResult,
+  PaymentAccount,
+  PaymentMethod,
+  SelectablePaymentMethod,
+} from '@/types/commerce.types';
 import type { SalonSettings } from '@/types/database.types';
 import type { CouponPreview } from '@/types/marketing.types';
 
@@ -92,14 +98,21 @@ function canPreviewProof(file: File): boolean {
   return file.type.startsWith('image/') && file.type !== 'image/heic';
 }
 
-/** Builds the payment methods this shop currently offers, in a sensible order. */
-function paymentOptionsFor(settings: SalonSettings): PaymentMethod[] {
-  const options: PaymentMethod[] = [];
-  if (settings.cod_enabled) options.push('cod');
-  if (settings.bank_transfer_enabled) options.push('bank_transfer');
-  // eSewa and Khalti are always offered.
-  options.push('esewa', 'khalti');
-  return options;
+/**
+ * Builds the payment methods this shop currently offers.
+ *
+ * Iterates SELECTABLE_PAYMENT_METHODS rather than listing methods here, so checkout and the order
+ * API cannot disagree about what is allowed. eSewa and Khalti were previously appended
+ * unconditionally — note that a wallet is not something a shop can simply decide to offer, since it
+ * needs a merchant account and a signed callback; offering them with nothing behind them sent
+ * customers to a payment step that could not complete.
+ */
+function paymentOptionsFor(settings: SalonSettings): SelectablePaymentMethod[] {
+  return SELECTABLE_PAYMENT_METHODS.filter((method) => {
+    if (method === 'cod') return settings.cod_enabled;
+    if (method === 'bank_transfer') return settings.bank_transfer_enabled;
+    return false;
+  });
 }
 
 /**
@@ -159,6 +172,16 @@ export function CheckoutForm({
 
   // A digital method is anything the customer pays before delivery, so they can prove it.
   const isDigitalPayment = paymentMethod !== 'cod';
+
+  /*
+    Only bank accounts are shown for a bank transfer. The table can still hold wallet rows — an
+    eSewa account is configured today — and rendering whatever comes back would quietly reintroduce
+    a payment method that is no longer offered.
+  */
+  const bankAccounts = React.useMemo(
+    () => paymentAccounts.filter((account) => account.provider === 'bank'),
+    [paymentAccounts]
+  );
 
   // Optional coupon. `validateCoupon` is an advisory pre-check only — `place_order()` recomputes
   // the discount on the server, which is the figure we trust for the final confirmation.
@@ -898,12 +921,17 @@ export function CheckoutForm({
 
           {isDigitalPayment && (
             <div className="space-y-4 rounded-2xl border border-rose-gold/20 bg-cream-100/60 p-4 sm:p-5">
-              {paymentAccounts.length > 0 ? (
-                /* A tab per provider the shop actually accepts. The transaction code and the
-                   screenshot inputs below are steps 2 and 3 of the list this renders, which is why
-                   they sit directly underneath rather than further down the form. */
+              {bankAccounts.length > 0 ? (
+                /* A card per bank account the shop accepts. The transaction code and the screenshot
+                   inputs below are steps 2 and 3 of the list this renders, which is why they sit
+                   directly underneath rather than further down the form.
+
+                   Filtered to `bank`: the payment_accounts table may still hold wallet rows (an
+                   eSewa account is currently configured), and without this filter an eSewa tab
+                   would appear under a bank transfer. The filter is here as well as in the data so
+                   that re-adding a row cannot silently reintroduce a removed method. */
                 <PaymentAccountTabs
-                  accounts={paymentAccounts}
+                  accounts={bankAccounts}
                   amount={payableTotal}
                   currencyLabel="रू"
                 />
@@ -932,7 +960,7 @@ export function CheckoutForm({
               <Field
                 label="Transaction ID / reference (optional)"
                 htmlFor="checkout-payment-reference"
-                hint="The reference from your eSewa, Khalti or bank receipt. You can add it later too."
+                  hint="The reference shown on your bank transfer receipt. You can add it later too."
               >
                 <Input
                   id="checkout-payment-reference"
