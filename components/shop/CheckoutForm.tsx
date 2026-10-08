@@ -25,7 +25,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/components/shop/CartProvider';
 import { PaymentQR } from '@/components/shop/PaymentQR';
-import { PaymentAccountTabs } from '@/components/shop/PaymentAccountTabs';
+import { BankTransferOptions } from '@/components/shop/BankTransferOptions';
 import { useAuth } from '@/components/account/AuthProvider';
 import { toOrderItems } from '@/lib/cart';
 import {
@@ -747,9 +747,9 @@ export function CheckoutForm({
             </Field>
 
             <Field
-              label="Mobile number"
+              label="Phone number"
               htmlFor="checkout-phone"
-              hint="10-digit Nepali mobile, e.g. 9800000000"
+              hint="10 digits, e.g. 9800000000"
               error={fieldErrors.customer_phone}
             >
               <Input
@@ -784,9 +784,8 @@ export function CheckoutForm({
           </Field>
 
           <Field
-            label="Street address"
+            label="Tole or street address"
             htmlFor="checkout-address"
-            hint="House number, tole or street."
             error={fieldErrors.delivery_address}
           >
             <Textarea
@@ -800,14 +799,14 @@ export function CheckoutForm({
             />
           </Field>
 
-          {/* District, municipality and ward are how a Nepali address is actually composed, and
-              the district decides the courier fee — so they are asked for properly rather than
-              folded into one free-text box. */}
+          {/* District, delivery area, municipality and ward are how a Nepali address is actually
+              composed. Two of them are load-bearing rather than decorative: `district` selects the
+              Kailali flat rate, and `delivery_city` is what grants free delivery inside Attariya
+              (FREE_DELIVERY_CITY). Folding either into free text would change what customers pay. */}
           <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="District"
               htmlFor="checkout-district"
-              hint="Kailali is our own district."
               error={fieldErrors.delivery_district}
             >
               <Select
@@ -873,9 +872,8 @@ export function CheckoutForm({
           </div>
 
           <Field
-            label="Landmark / Tole (optional)"
+            label="Landmark (optional)"
             htmlFor="checkout-landmark"
-            hint="This is what the rider actually looks for."
           >
             <Input
               id="checkout-landmark"
@@ -930,7 +928,7 @@ export function CheckoutForm({
                    eSewa account is currently configured), and without this filter an eSewa tab
                    would appear under a bank transfer. The filter is here as well as in the data so
                    that re-adding a row cannot silently reintroduce a removed method. */
-                <PaymentAccountTabs
+                <BankTransferOptions
                   accounts={bankAccounts}
                   amount={payableTotal}
                   currencyLabel="रू"

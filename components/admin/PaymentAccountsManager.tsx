@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { deletePaymentAccount, getPaymentAccounts, upsertPaymentAccount } from '@/lib/shop-admin-api';
 import { deletePaymentQr, uploadPaymentQr } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import { paymentAccountName } from '@/components/shop/PaymentAccountTabs';
+import { paymentAccountName } from '@/components/shop/BankTransferOptions';
 import type { PaymentAccount, PaymentProvider } from '@/types/commerce.types';
 
 /**
