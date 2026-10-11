@@ -1,6 +1,7 @@
-import { getSalonSettings } from '@/lib/api';
+import { getSalonSettings, isStaffSession } from '@/lib/api';
 import { siteUrl } from '@/lib/supabase/config';
 import { AnnouncementBanner } from '@/components/public/AnnouncementBanner';
+import { MaintenanceScreen } from '@/components/public/MaintenanceScreen';
 import { SiteHeader } from '@/components/public/SiteHeader';
 import { SiteFooter } from '@/components/public/SiteFooter';
 import { WhatsAppFloatingButton } from '@/components/public/WhatsAppFloatingButton';
@@ -23,6 +24,18 @@ import { serializeJsonLd } from '@/lib/security/json-ld';
  */
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSalonSettings();
+
+  /*
+    Maintenance mode returns before the shell is built, so nothing else on this page renders — no
+    header, footer, cart, cookie banner, analytics beacon or business schema. Returning the screen
+    instead of the children is what keeps a maintenance window out of the traffic figures.
+
+    The staff check is inside the condition on purpose. It costs two round trips, and there is no
+    reason to pay them on the ordinary path just to learn that the site is open.
+  */
+  if (settings.maintenance_mode && !(await isStaffSession())) {
+    return <MaintenanceScreen settings={settings} />;
+  }
 
   const businessSchema = {
     '@context': 'https://schema.org',

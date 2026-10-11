@@ -81,6 +81,57 @@ function mapPlacementError(raw: string): { status: number; message: string } {
   return { status: 500, message: 'We could not place your order. Please call us on WhatsApp.' };
 }
 
+/**
+ * Why the shop is not accepting orders right now, or null when it is.
+ *
+ * The public layout already hides the storefront during maintenance, but a layout cannot stop a
+ * POST. A customer who opened checkout before the switch was thrown — or a script that goes
+ * straight to the API — would otherwise still be able to place an order while the shop is closed,
+ * which is exactly the order nobody is there to fulfil.
+ *
+ * `store_enabled` is checked here as well. It is labelled "Store is open — customers can browse and
+ * order" but until now nothing enforced it anywhere outside the admin form, so switching it off
+ * changed a label and nothing else. Both read through the service-role client so the answer cannot
+ * depend on whatever RLS policy happens to apply to an anonymous reader.
+ *
+ * Fails open on error: a settings lookup that is unavailable must not stop a shop trading.
+ */
+async function storeClosure(): Promise<{ status: number; message: string } | null> {
+  if (isDemoMode()) return null;
+
+  try {
+    const admin = createAdminClient();
+    if (!admin) return null;
+
+    const { data } = await admin
+      .from('salon_settings')
+      .select('maintenance_mode, store_enabled')
+      .eq('id', 1)
+      .maybeSingle();
+
+    const row = data as { maintenance_mode?: boolean | null; store_enabled?: boolean | null } | null;
+    if (!row) return null;
+
+    if (row.maintenance_mode) {
+      return {
+        status: 503,
+        message:
+          'Our shop is briefly closed for maintenance and is not taking new orders. Please try again shortly, or message us on WhatsApp.',
+      };
+    }
+    if (row.store_enabled === false) {
+      return {
+        status: 503,
+        message:
+          'Our online shop is closed at the moment and is not taking new orders. Please message us on WhatsApp.',
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /* ────────────────────────────────────────────────────────────────── POST ── */
 
 export async function POST(request: NextRequest) {
@@ -89,6 +140,13 @@ export async function POST(request: NextRequest) {
       { ok: false, error: 'Too many attempts. Please try again in a minute.' },
       { status: 429 }
     );
+  }
+
+  /* Checked before the body is parsed: there is no point telling a customer their ward is missing
+     when the shop is not taking orders at all. */
+  const closure = await storeClosure();
+  if (closure) {
+    return NextResponse.json<OrderResult>({ ok: false, error: closure.message }, { status: closure.status });
   }
 
   let body: Record<string, unknown>;

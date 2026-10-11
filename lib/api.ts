@@ -59,6 +59,50 @@ export async function getSalonSettings(): Promise<SalonSettings> {
   }
 }
 
+/**
+ * Whether this request carries a signed-in staff session.
+ *
+ * Exists so maintenance mode can let staff past. Without it the owner cannot look at their own
+ * shop while it is closed, and — worse — cannot check that the maintenance screen is actually what
+ * customers see. It mirrors `is_staff()` in the database: a profile row, an active flag, and a
+ * staff role. A signed-in *customer* is not staff and must not bypass maintenance, which is why this
+ * asks the database rather than trusting the presence of any session.
+ *
+ * Fails closed (returns false) on error, so a lookup failure shows the maintenance screen rather
+ * than accidentally exposing the site to everyone.
+ *
+ * Only call this when maintenance mode is on: the public layout gates on it, so the ordinary
+ * request path never pays for the two round trips.
+ */
+export async function isStaffSession(): Promise<boolean> {
+  if (isDemoMode()) return false;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const profile = data as { role?: string | null; is_active?: boolean | null } | null;
+    if (!profile) return false;
+
+    // `is_active !== false` rather than a plain truthiness test, because is_staff() wraps the column
+    // in COALESCE(is_active, TRUE) — a NULL reads as active in the database, so it has to read as
+    // active here too or staff with an unset flag would be locked out of their own preview.
+    const active = profile.is_active !== false;
+    return active && (profile.role === 'admin' || profile.role === 'staff');
+  } catch {
+    return false;
+  }
+}
+
 /* ---------------------------------------------------------------- services */
 
 export async function getActiveServices(): Promise<Service[]> {

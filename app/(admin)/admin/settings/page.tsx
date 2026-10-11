@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, Eye, EyeOff, Power, Trash2 } from 'lucide-react';
 import { HeroSlideshowManager } from '@/components/admin/HeroSlideshowManager';
 import { ImageUploadDropzone } from '@/components/admin/ImageUploadDropzone';
 import { WatermarkSettingsCard } from '@/components/admin/WatermarkSettingsCard';
@@ -68,9 +68,17 @@ interface SettingsForm {
   promo_subheadline: string;
   promo_cta_label: string;
   promo_href: string;
+  /* ── Maintenance mode (migration 20261011000001) ──────────────────────────── */
+  maintenance_mode: boolean;
+  maintenance_message: string;
+  maintenance_eta: string;
 }
 
 type FieldErrors = Partial<Record<keyof SettingsForm, string>>;
+
+/** Matches the CHECK constraints on `salon_settings` — see migration 20261011000001. */
+const MAINTENANCE_MESSAGE_MAX = 400;
+const MAINTENANCE_ETA_MAX = 120;
 
 const EMPTY_FORM: SettingsForm = {
   phone: '',
@@ -116,6 +124,10 @@ const EMPTY_FORM: SettingsForm = {
   promo_subheadline: '',
   promo_cta_label: '',
   promo_href: '',
+  // Defaults to OFF. A settings form should never arrive with the site already down.
+  maintenance_mode: false,
+  maintenance_message: '',
+  maintenance_eta: '',
 };
 
 /**
@@ -214,6 +226,9 @@ export default function AdminSettingsPage() {
         promo_subheadline: settings.promo_subheadline ?? '',
         promo_cta_label: settings.promo_cta_label ?? '',
         promo_href: settings.promo_href ?? '',
+        maintenance_mode: settings.maintenance_mode,
+        maintenance_message: settings.maintenance_message ?? '',
+        maintenance_eta: settings.maintenance_eta ?? '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load the business settings.');
@@ -348,6 +363,22 @@ export default function AdminSettingsPage() {
     return nextErrors;
   }
 
+  /**
+   * Maintenance guard. Both limits mirror CHECK constraints on the table, so the form refuses a
+   * value the database would reject — a save that fails on a constraint surfaces as a raw Postgres
+   * error, which is not something an owner should have to read.
+   */
+  function validateMaintenance(values: SettingsForm): FieldErrors {
+    const nextErrors: FieldErrors = {};
+    if (values.maintenance_message.trim().length > MAINTENANCE_MESSAGE_MAX) {
+      nextErrors.maintenance_message = `Keep the message to ${MAINTENANCE_MESSAGE_MAX} characters or fewer.`;
+    }
+    if (values.maintenance_eta.trim().length > MAINTENANCE_ETA_MAX) {
+      nextErrors.maintenance_eta = `Keep the "back by" note to ${MAINTENANCE_ETA_MAX} characters or fewer.`;
+    }
+    return nextErrors;
+  }
+
   function validateSocial(values: SettingsForm): FieldErrors {
     const nextErrors: FieldErrors = {};
     const email = values.email.trim();
@@ -414,8 +445,15 @@ export default function AdminSettingsPage() {
         promo_subheadline: form.promo_subheadline.trim() || null,
         promo_cta_label: form.promo_cta_label.trim() || null,
         promo_href: form.promo_href.trim() || null,
+        maintenance_mode: form.maintenance_mode,
+        maintenance_message: form.maintenance_message.trim().slice(0, MAINTENANCE_MESSAGE_MAX) || null,
+        maintenance_eta: form.maintenance_eta.trim().slice(0, MAINTENANCE_ETA_MAX) || null,
       });
-      setSuccess('Settings saved. The public site is up to date.');
+      setSuccess(
+        form.maintenance_mode
+          ? 'Saved. The public site is now showing the maintenance screen.'
+          : 'Settings saved. The public site is up to date.'
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the settings.');
     } finally {
@@ -521,6 +559,90 @@ export default function AdminSettingsPage() {
           {success}
         </p>
       ) : null}
+
+      {/* Maintenance mode. Placed first because it is the one control on this page that changes what
+          the public sees the instant it is saved — and the only one that can take the shop offline. */}
+      <Card className={cn(form.maintenance_mode && 'border-danger/40 bg-danger/[0.03]')}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Power className="h-4 w-4 text-rose-gold" aria-hidden="true" />
+            Maintenance mode
+          </CardTitle>
+          <CardDescription>
+            Takes the public website out of service while you work on it. The admin console stays
+            open, and because you are signed in you can still browse the site yourself to check how
+            it looks.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(event) => void submitWith(event, validateMaintenance)} className="space-y-4">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-charcoal/10 bg-white/60 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={form.maintenance_mode}
+                onChange={(event) => patch('maintenance_mode', event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-charcoal/30 text-rose-gold focus-visible:ring-rose-gold"
+              />
+              <span className="text-sm text-charcoal">
+                <span className="font-medium">
+                  Site is in maintenance — visitors see only the maintenance screen
+                </span>
+                <span className="mt-1 block text-xs text-charcoal-soft">
+                  New orders are refused while this is on. Orders already placed are unaffected.
+                </span>
+              </span>
+            </label>
+
+            {form.maintenance_mode ? (
+              <p
+                role="status"
+                className="flex items-start gap-2 rounded-xl bg-warn/10 px-4 py-3 text-xs font-medium text-warn"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Saving will take the public site offline straight away. Remember to switch this off
+                when you are finished — the console will not do it for you.
+              </p>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Message for visitors (optional)"
+                htmlFor="settings-maintenance-message"
+                error={fieldErrors.maintenance_message ?? null}
+                hint={`Leave blank for the default wording. ${MAINTENANCE_MESSAGE_MAX} characters maximum.`}
+              >
+                <Textarea
+                  id="settings-maintenance-message"
+                  rows={3}
+                  maxLength={MAINTENANCE_MESSAGE_MAX}
+                  value={form.maintenance_message}
+                  onChange={(event) => patch('maintenance_message', event.target.value)}
+                  placeholder="We are updating the shop and will be back shortly."
+                />
+              </Field>
+
+              <Field
+                label="“Back by” note (optional)"
+                htmlFor="settings-maintenance-eta"
+                error={fieldErrors.maintenance_eta ?? null}
+                hint="Shown as a highlighted note, e.g. “Back by 6 PM today”. Free text."
+              >
+                <Input
+                  id="settings-maintenance-eta"
+                  maxLength={MAINTENANCE_ETA_MAX}
+                  value={form.maintenance_eta}
+                  onChange={(event) => patch('maintenance_eta', event.target.value)}
+                  placeholder="Back by 6 PM today"
+                />
+              </Field>
+            </div>
+
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save site status'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <Card>

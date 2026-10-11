@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, LogOut, Menu } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { LowStockAlert } from '@/components/admin/LowStockAlert';
+import { MaintenanceBanner } from '@/components/admin/MaintenanceBanner';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { getAppointmentsByDate, getCurrentStaff, signOutStaff } from '@/lib/api-client';
@@ -169,6 +170,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
         </header>
+
+        {/* Sits directly under the toolbar so it is visible on every admin screen, and stays silent
+            unless maintenance mode is on. */}
+        <MaintenanceBanner />
 
         <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>

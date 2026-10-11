@@ -107,8 +107,10 @@ export const demoStore = {
     free_shipping_threshold_npr: 5000,
     cod_enabled: true,
     bank_transfer_enabled: true,
+    // Bank-neutral, matching the live settings: wallets are no longer a payment option, so the demo
+    // dataset must not imply they are.
     payment_instructions:
-      'eSewa / Khalti: 98XXXXXXXX (Alikati Beauty Home). Send a screenshot of the payment on WhatsApp to confirm your order. Bank transfer details available on request.',
+      'Transfer the total to the bank account shown at checkout, or scan the QR. Then upload your payment screenshot — we confirm your order on WhatsApp.',
     support_email: 'alikatibeautyhome@gmail.com',
     delivery_note: 'Inside Attariya: same-day. Elsewhere in Kailali: 1–2 days.',
     // ── Public contact details and social profiles ─────────────────────────
@@ -142,6 +144,12 @@ export const demoStore = {
     promo_subheadline: 'See everything currently reduced across the shop.',
     promo_cta_label: 'Shop the offers',
     promo_href: '/shop',
+    // ── Maintenance mode ───────────────────────────────────────────────────
+    // Off in the demo dataset on purpose: a demo that opens onto a "we're closed" screen shows
+    // nothing of what the site does, and the demo has no admin console to switch it back on.
+    maintenance_mode: false,
+    maintenance_message: null,
+    maintenance_eta: null,
     affiliate_enabled: true,
     affiliate_commission_rate: 5,
     affiliate_terms:

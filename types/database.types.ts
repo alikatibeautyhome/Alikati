@@ -162,6 +162,19 @@ export interface SalonSettings {
   promo_subheadline: string | null;
   promo_cta_label: string | null;
   promo_href: string | null;
+
+  /* ── Maintenance mode (migration 20261011000001) ───────────────────────────── */
+  /**
+   * When true the public site shows the maintenance screen instead of its pages, and the order API
+   * refuses new orders. Separate from `store_enabled` on purpose: that one concerns whether the shop
+   * takes orders, this one withdraws the whole public site. Staff signed in are exempt so they can
+   * check the site while it is down.
+   */
+  maintenance_mode: boolean;
+  /** Optional line shown to visitors. `null` falls back to the default wording. */
+  maintenance_message: string | null;
+  /** Optional free-text "back by" note, e.g. "Back by 6 PM today". */
+  maintenance_eta: string | null;
 }
 
 /**
