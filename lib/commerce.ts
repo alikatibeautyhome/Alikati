@@ -207,8 +207,13 @@ export function stockLabel(product: Pick<Product, 'stock_qty' | 'low_stock_thres
 /* --------------------------------------------------------------------- cart */
 
 /**
- * Totals for the browser cart. Shipping mirrors `place_order()` in SQL: free once the
- * subtotal reaches the threshold, or always free when the threshold is 0.
+ * Totals for the browser cart.
+ *
+ * `shipping` is an **estimate**, not the charged fee: it applies the threshold rule alone because
+ * the cart does not know where the order is going. Since migration 0024 the charged fee also
+ * depends on the destination (free in Attariya, flat across Kailali), so `deliveryFeeFor()` is the
+ * authority and the cart says so in the UI. Treating this figure as final is what made the cart
+ * promise "Free" to a customer the checkout then charged.
  */
 export function cartTotals(
   lines: CartLine[],
@@ -226,7 +231,6 @@ export function cartTotals(
     subtotal,
     shipping,
     total: subtotal + shipping,
-    freeShippingRemaining: threshold > 0 ? Math.max(0, threshold - subtotal) : 0,
   };
 }
 

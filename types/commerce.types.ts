@@ -199,9 +199,13 @@ export interface CartLine {
 export interface CartTotals {
   itemCount: number;
   subtotal: number;
+  /**
+   * A pre-address estimate: the configured fee, waived above the threshold. It cannot know the
+   * delivery district, so it is not necessarily what the customer is charged — `deliveryFeeFor()`
+   * is authoritative, and the cart labels this figure as an estimate for that reason.
+   */
   shipping: number;
   total: number;
-  freeShippingRemaining: number;
 }
 
 /** Request body for `POST /api/orders`. */

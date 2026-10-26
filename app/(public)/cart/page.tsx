@@ -70,7 +70,7 @@ export default function CartPage() {
                   <dd className="font-medium text-price">{formatNPR(totals.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-charcoal-soft">Delivery</dt>
+                  <dt className="text-charcoal-soft">Delivery (estimate)</dt>
                   <dd className="font-medium text-price">
                     {totals.shipping === 0 ? 'Free' : formatNPR(totals.shipping)}
                   </dd>
@@ -81,12 +81,18 @@ export default function CartPage() {
                 </div>
               </dl>
 
-              {totals.freeShippingRemaining > 0 && (
-                <p className="flex items-start gap-2 rounded-xl bg-blush-100 p-3 text-xs text-charcoal-soft">
-                  <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  Add {formatNPR(totals.freeShippingRemaining)} more for free delivery.
-                </p>
-              )}
+              {/* Shown unconditionally, because the estimate can be wrong in either direction.
+                  It applies the free-delivery threshold only, while the charged fee also depends on the
+                  destination (free in Attariya, flat across Kailali). The old "add Rs X more" nudge was
+                  worse than useless here: it urged Kailali shoppers to spend more for a waiver that
+                  does not apply to them. */}
+              <p className="flex items-start gap-2 rounded-xl bg-blush-100 p-3 text-xs text-charcoal-soft">
+                <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  We confirm the exact delivery fee at checkout from your district — it can differ
+                  from the estimate above.
+                </span>
+              </p>
 
               <Link href="/checkout" className={buttonVariants({ size: 'lg', className: 'w-full' })}>
                 Proceed to checkout
