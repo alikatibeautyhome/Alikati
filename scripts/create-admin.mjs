@@ -91,7 +91,8 @@ if (!promoteOnly) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName, role: 'admin' },
+    user_metadata: { full_name: fullName },
+    app_metadata: { role: 'admin' },
   });
 
   if (createError) {
@@ -114,7 +115,8 @@ if (!promoteOnly) {
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName, role: 'admin' },
+      user_metadata: { full_name: fullName },
+    app_metadata: { role: 'admin' },
     });
     if (updateError) {
       console.error(`✖ Could not update the password: ${updateError.message}`);

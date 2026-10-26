@@ -85,7 +85,19 @@ export async function getProducts(query: ProductQuery = {}): Promise<Product[]> 
     if (inStockOnly) builder = builder.gt('stock_qty', 0);
     if (search) builder = builder.or(`name.ilike.%${search}%,brand.ilike.%${search}%,short_description.ilike.%${search}%`);
 
-    const { data, error } = await builder;
+    // Newest/name sorts run in SQL with the limit applied there, so the page never downloads
+    // the whole catalogue. Price sorts depend on the discount, so they still sort in JS, but
+    // are capped to stay within the API's row limit.
+    const priceSort = sort === 'price-asc' || sort === 'price-desc';
+    const sqlLimit = typeof limit === 'number' && !priceSort ? limit : 1000;
+    const ordered =
+      sort === 'name'
+        ? builder.order('name', { ascending: true })
+        : priceSort
+          ? builder
+          : builder.order('created_at', { ascending: false }).order('name', { ascending: true });
+
+    const { data, error } = await ordered.limit(sqlLimit);
     if (error) throw new Error(error.message);
 
     // Sorting happens in JS so live and demo modes order identically — including

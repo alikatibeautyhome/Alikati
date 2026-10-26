@@ -308,6 +308,9 @@ export async function getOrders(query: OrderQuery = {}): Promise<Order[]> {
   if (isDemoMode()) return demoCommerceDb.getOrders(query);
 
   const { status, search, from, to } = query;
+  // Pages of 100 newest-first; pass `page` (0-based) to load older orders.
+  const pageSize = Math.min(Math.max(query.pageSize ?? 100, 1), 500);
+  const page = Math.max(query.page ?? 0, 0);
   const supabase = db();
 
   let builder = supabase.from('orders').select('*, items:order_items(*)');
@@ -316,7 +319,12 @@ export async function getOrders(query: OrderQuery = {}): Promise<Order[]> {
   if (to) builder = builder.lte('created_at', `${to}T23:59:59`);
   if (search) builder = builder.or(`reference.ilike.%${search}%,customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%`);
 
-  const rows = unwrap(await builder.order('created_at', { ascending: false }), 'getOrders') as Order[];
+  const rows = unwrap(
+    await builder
+      .order('created_at', { ascending: false })
+      .range(page * pageSize, page * pageSize + pageSize - 1),
+    'getOrders'
+  ) as Order[];
   return rows;
 }
 

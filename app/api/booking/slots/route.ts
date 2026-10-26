@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   const settings = await getSalonSettings();
 
-  let taken: Pick<{ booking_time: string; status: AppointmentStatus }, 'booking_time' | 'status'>[] = [];
+  let taken: { booking_time: string; status: AppointmentStatus; duration_minutes?: number | null }[] = [];
   let verified = true;
 
   if (isDemoMode()) {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     if (admin) {
       const { data, error } = await admin
         .from('appointments')
-        .select('booking_time, status')
+        .select('booking_time, status, service:services(duration_minutes)')
         .eq('booking_date', date)
         .in('status', ['pending', 'confirmed', 'in_progress']);
 
@@ -48,7 +48,15 @@ export async function GET(request: NextRequest) {
         console.error('[api/booking/slots] occupancy lookup failed:', error.message);
         verified = false;
       } else {
-        taken = data ?? [];
+        taken = (data ?? []).map((row) => {
+          const svc = (row as { service?: { duration_minutes?: number } | { duration_minutes?: number }[] | null }).service;
+          const one = Array.isArray(svc) ? svc[0] : svc;
+          return {
+            booking_time: row.booking_time as string,
+            status: row.status as AppointmentStatus,
+            duration_minutes: one?.duration_minutes ?? null,
+          };
+        });
       }
     } else {
       console.warn(
@@ -61,7 +69,8 @@ export async function GET(request: NextRequest) {
   const slots = generateTimeSlots(
     settings,
     taken,
-    Number.isFinite(duration) && duration > 0 ? duration : 60
+    Number.isFinite(duration) && duration > 0 ? duration : 60,
+    date
   );
 
   return NextResponse.json(

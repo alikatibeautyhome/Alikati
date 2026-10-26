@@ -216,14 +216,30 @@ export async function createAcademyLead(input: {
 }): Promise<AcademyLead> {
   if (isDemoMode()) return demoDb.createLead(input);
 
-  return unwrap(
-    await db()
-      .from('academy_leads')
-      .insert([{ ...input, notes: input.notes ?? null, status: 'new' }])
-      .select()
-      .single(),
+  // Anonymous visitors cannot insert or read academy_leads directly, so this goes through
+  // a database function that validates the fields and only returns the new id.
+  const id = unwrap(
+    await db().rpc('submit_academy_lead', {
+      p_student_name: input.student_name,
+      p_student_phone: input.student_phone,
+      p_course_id: input.course_id,
+      p_notes: input.notes ?? null,
+    }),
     'createAcademyLead'
-  ) as AcademyLead;
+  ) as string;
+
+  const now = new Date().toISOString();
+  const lead: AcademyLead = {
+    id,
+    student_name: input.student_name,
+    student_phone: input.student_phone,
+    course_id: input.course_id,
+    notes: input.notes ?? null,
+    status: 'new',
+    created_at: now,
+    updated_at: now,
+  };
+  return lead;
 }
 
 /* ------------------------------------------------------------------ gallery */

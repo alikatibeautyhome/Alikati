@@ -274,6 +274,7 @@ export async function POST(request: NextRequest) {
   let shipping: number;
   let total: number;
   let appliedCoupon: string | null = null;
+  let paymentDetailsSaved = false;
   let appliedAffiliate: string | null = null;
   let businessWhatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '9779800000000';
   let resolvedNames = new Map<string, string>();
@@ -293,6 +294,7 @@ export async function POST(request: NextRequest) {
       appliedAffiliate = order.affiliate_code ?? null;
       resolvedNames = new Map((order.items ?? []).map((item) => [item.product_id ?? '', item.product_name]));
       businessWhatsapp = demoDb.getSettings().whatsapp_number;
+      paymentDetailsSaved = Boolean(payment_reference || payment_proof_url);
     } catch (error) {
       const mapped = mapPlacementError(error instanceof Error ? error.message : '');
       return NextResponse.json<OrderResult>({ ok: false, error: mapped.message }, { status: mapped.status });
@@ -414,6 +416,7 @@ export async function POST(request: NextRequest) {
     // already placed and priced correctly, so it is logged and the customer is told to send
     // the screenshot on WhatsApp instead.
     if (payment_reference || payment_proof_url) {
+      paymentDetailsSaved = true;
       const { error: attachError } = await writer
         .from('orders')
         .update({ payment_reference: payment_reference || null, payment_proof_url })
@@ -421,9 +424,15 @@ export async function POST(request: NextRequest) {
 
       if (attachError) {
         console.error('[api/orders] could not attach payment details:', attachError.message);
+        // Do not tell the customer it was saved: the confirmation screen then asks them to
+        // send the screenshot on WhatsApp instead.
+        paymentDetailsSaved = false;
       }
     }
   }
+
+  const savedReference = paymentDetailsSaved ? payment_reference || null : null;
+  const savedProof = paymentDetailsSaved ? payment_proof_url ?? null : null;
 
   const whatsapp_url = createOrderNotificationLink({
     reference,
@@ -442,8 +451,8 @@ export async function POST(request: NextRequest) {
     discount_npr: discount,
     shipping_npr: shipping,
     coupon_code: appliedCoupon,
-    payment_reference: payment_reference || null,
-    payment_proof_url,
+    payment_reference: savedReference,
+    payment_proof_url: savedProof,
     delivery_address,
   });
 
@@ -458,8 +467,9 @@ export async function POST(request: NextRequest) {
       total_npr: total,
       coupon_code: appliedCoupon,
       affiliate_code: appliedAffiliate,
-      payment_reference: payment_reference || null,
-      payment_proof_url,
+      payment_reference: savedReference,
+      payment_proof_url: savedProof,
+      payment_details_saved: paymentDetailsSaved,
       whatsapp_url,
     },
     { status: 201 }

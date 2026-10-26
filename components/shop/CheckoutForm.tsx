@@ -523,9 +523,15 @@ export function CheckoutForm({
           delivery_city: deliveryCity,
           payment_method: paymentMethod,
           // Echoed by the API; the local values are the fallback if it ever omits them.
+          // Only show payment details the server confirms it stored with the order.
           payment_reference:
-            data.payment_reference ?? (isDigitalPayment ? paymentReference.trim() || null : null),
-          payment_proof_url: data.payment_proof_url ?? (isDigitalPayment ? proofKey ?? null : null),
+            data.payment_details_saved === false
+              ? null
+              : data.payment_reference ?? (isDigitalPayment ? paymentReference.trim() || null : null),
+          payment_proof_url:
+            data.payment_details_saved === false
+              ? null
+              : data.payment_proof_url ?? (isDigitalPayment ? proofKey ?? null : null),
           subtotal_npr: data.subtotal_npr ?? totals.subtotal,
           discount_npr: serverDiscount,
           coupon_code: data.coupon_code ?? appliedCode,

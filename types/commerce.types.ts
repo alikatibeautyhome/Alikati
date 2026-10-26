@@ -238,6 +238,8 @@ export interface OrderResult {
   /** Echoed back so the confirmation screen can show what was attached. */
   payment_reference?: string | null;
   payment_proof_url?: string | null;
+  /** False when the payment reference/screenshot could not be stored with the order. */
+  payment_details_saved?: boolean;
   whatsapp_url?: string;
   error?: string;
   /** Field-level validation messages keyed by payload field name. */
@@ -273,6 +275,10 @@ export interface OrderQuery {
   from?: string;
   /** YYYY-MM-DD, inclusive. */
   to?: string;
+  /** 0-based page number (newest first). */
+  page?: number;
+  /** Orders per page, default 100, max 500. */
+  pageSize?: number;
 }
 
 /** Sales-side dashboard counters. */

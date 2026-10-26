@@ -208,7 +208,9 @@ export async function POST(request: NextRequest) {
     password,
     email_confirm: true,
     // The role claim drives the profile trigger. A customer gets no `profiles` row at all.
-    user_metadata: { full_name, role, phone },
+    user_metadata: { full_name, phone },
+    // Role lives in app_metadata: only the service role can set it, so signups cannot forge it.
+    app_metadata: role === 'customer' ? {} : { role },
   });
 
   if (error) {

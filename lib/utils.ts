@@ -100,18 +100,21 @@ export function minutesBetween(from: string, to: string): number {
 }
 
 /**
- * 30-minute bookable intervals between opening and closing, excluding slots that clash
- * with a live appointment, slots that would run past closing, and slots already in the past.
+ * 30-minute bookable intervals between opening and closing, excluding slots that overlap
+ * a live appointment (using each appointment's duration), slots that would run past
+ * closing, and — only when `bookingDate` is today in Nepal — slots already in the past.
  *
  * @param settings              salon opening/closing times (`HH:mm`)
  * @param dayAppointments       appointments already booked on the target date
  * @param serviceDurationMinutes duration of the service being booked
+ * @param bookingDate           target date `YYYY-MM-DD`; omitted = today
  * @param reference             "now" — injectable for deterministic tests
  */
 export function generateTimeSlots(
   settings: Pick<SalonSettings, 'opening_time' | 'closing_time'>,
-  dayAppointments: Pick<AppointmentLike, 'booking_time' | 'status'>[],
+  dayAppointments: (Pick<AppointmentLike, 'booking_time' | 'status'> & { duration_minutes?: number | null })[],
   serviceDurationMinutes = 60,
+  bookingDate?: string,
   reference: Date = new Date()
 ): string[] {
   const toMin = (t: string) => {
@@ -124,27 +127,34 @@ export function generateTimeSlots(
   const open = toMin(settings.opening_time);
   const close = toMin(settings.closing_time);
 
-  const busy = new Set(
-    dayAppointments
-      .filter((a) => a.status !== 'cancelled')
-      .map((a) => a.booking_time.slice(0, 5))
-  );
+  const busy = dayAppointments
+    .filter((a) => a.status !== 'cancelled' && a.status !== 'completed')
+    .map((a) => {
+      const start = toMin(a.booking_time.slice(0, 5));
+      return { start, end: start + (a.duration_minutes && a.duration_minutes > 0 ? a.duration_minutes : 60) };
+    });
 
-  // Current wall-clock time in Nepal, expressed as minutes since midnight.
-  const nowParts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kathmandu',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(reference);
-  const nowMinutes = toMin(nowParts);
+  const today = todayISO(reference);
+  const target = bookingDate ?? today;
+  if (target < today) return [];
+
+  let nowMinutes = -1;
+  if (target === today) {
+    const nowParts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kathmandu',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(reference);
+    nowMinutes = toMin(nowParts);
+  }
 
   const slots: string[] = [];
   for (let mins = open; mins + serviceDurationMinutes <= close; mins += 30) {
-    const label = toLabel(mins);
-    if (busy.has(label)) continue;
     if (mins <= nowMinutes) continue;
-    slots.push(label);
+    const end = mins + serviceDurationMinutes;
+    if (busy.some((b) => mins < b.end && end > b.start)) continue;
+    slots.push(toLabel(mins));
   }
   return slots;
 }

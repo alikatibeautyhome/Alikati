@@ -3,7 +3,8 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isDemoMode } from '@/lib/supabase/config';
 import { demoDb } from '@/lib/demo-data';
 import { createWhatsAppBookingLink } from '@/lib/whatsapp';
-import { effectivePrice, isValidNepaliPhone, referenceCode } from '@/lib/utils';
+import { effectivePrice, generateTimeSlots, isValidNepaliPhone, referenceCode, todayISO } from '@/lib/utils';
+import { getSalonSettings } from '@/lib/api';
 import type { BookingResult } from '@/types/database.types';
 import { clientIp } from '@/lib/security/client-ip';
 import { createRateLimiter } from '@/lib/security/rate-limit';
@@ -56,6 +57,12 @@ export async function POST(request: NextRequest) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(booking_date)) fields.booking_date = 'Select a valid date.';
   if (!/^\d{2}:\d{2}$/.test(booking_time)) fields.booking_time = 'Select a valid time slot.';
   if (!service_id) fields.service_id = 'Choose a service.';
+  if (!fields.booking_date && booking_date < todayISO()) {
+    fields.booking_date = 'That date has already passed.';
+  }
+  if (!fields.booking_time && !/^\d{2}:(00|30)$/.test(booking_time)) {
+    fields.booking_time = 'Select one of the offered time slots.';
+  }
 
   if (Object.keys(fields).length > 0) {
     return NextResponse.json<BookingResult>(
@@ -128,7 +135,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: service, error: serviceError } = await supabase
     .from('services')
-    .select('id, title, price_npr, discount_price_npr, is_active')
+    .select('id, title, price_npr, discount_price_npr, is_active, duration_minutes')
     .eq('id', service_id)
     .single();
 
@@ -144,6 +151,21 @@ export async function POST(request: NextRequest) {
     .select('whatsapp_number')
     .eq('id', 1)
     .single();
+
+  // The slot must be one we would actually offer: inside opening hours, not in the past, and
+  // long enough for this service. Occupancy is re-checked by the database under a lock.
+  const hours = await getSalonSettings();
+  const offered = generateTimeSlots(hours, [], service.duration_minutes ?? 60, booking_date);
+  if (!offered.includes(booking_time)) {
+    return NextResponse.json<BookingResult>(
+      {
+        ok: false,
+        error: 'That time is outside our booking hours or has passed. Please pick another slot.',
+        fields: { booking_time: 'Select one of the offered time slots.' },
+      },
+      { status: 422 }
+    );
+  }
 
   const price = effectivePrice(service);
   const businessWhatsapp =
@@ -173,7 +195,10 @@ export async function POST(request: NextRequest) {
   if (insertError) {
     // 23505 = the partial unique index on (booking_date, booking_time, service_id) fired,
     // i.e. another request won the race between our availability check and this insert.
+    // 23505 = the database found an overlapping appointment (or the old unique slot index);
+    // 23514 = the database rejected a past or out-of-hours time.
     const clash = insertError.code === '23505';
+    const badTime = insertError.code === '23514';
     console.error('[api/booking] insert failed:', insertError.code, insertError.message);
 
     return NextResponse.json<BookingResult>(
@@ -181,9 +206,11 @@ export async function POST(request: NextRequest) {
         ok: false,
         error: clash
           ? 'That slot was just taken. Please pick another time.'
-          : 'We could not save your booking. Please call us directly.',
+          : badTime
+            ? 'That time is outside our booking hours or has passed. Please pick another slot.'
+            : 'We could not save your booking. Please call us directly.',
       },
-      { status: 409 }
+      { status: clash ? 409 : badTime ? 422 : 500 }
     );
   }
 
